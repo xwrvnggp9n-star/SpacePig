@@ -1,0 +1,194 @@
+Reading additional input from stdin...
+OpenAI Codex v0.155.1
+--------
+workdir: /Users/sandy/Projects/SystemDataLens
+model: gpt-6-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1084d-1336-7da0-b4bd-15f5a9105408
+--------
+user
+You are reviewing a design plan (PLAN.md in the current directory) for a native macOS app with a root privileged helper (SMAppService daemon + NSXPC) that scans disk usage and deletes cleanup targets. Do a rigorous technical review. Focus on: (1) security of the root helper, XPC client validation, deletion code and anything an attacker on the same machine could abuse; (2) correctness of SMAppService daemon registration, bundle layout, signing and launchd plist details on macOS 14+; (3) whether the scanner approach gives accurate numbers on APFS (firmlinks, clones, hard links, dataless files, purgeable space, snapshots); (4) whether the category reconstruction matches how System Settings Storage actually categorizes; (5) the cleanup target list: anything risky, wrong, or that should run as the user vs root; (6) anything missing. Output a numbered list of concrete findings, each tagged BLOCKER, SHOULD or NIT, with the fix. Be terse.
+codex
+I’ll read the plan, then check the macOS service and filesystem assumptions against Apple’s documentation. I’ll return only concrete findings with fixes.
+exec
+/bin/zsh -lc 'cat PLAN.md' in /Users/sandy/Projects/SystemDataLens
+ succeeded in 0ms:
+# SystemDataLens plan
+
+A free, open-source (MIT), native macOS app that shows what is actually inside the
+"macOS" and "System Data" bars in System Settings > General > Storage, down to real
+paths on disk, and can clean up known-safe targets the user selects.
+
+## Constraints
+
+- macOS 14+, Apple Silicon and Intel. SwiftUI app, Swift 5.9 language mode.
+- Built with xcodegen (`project.yml`), bundle prefix `app.sklar`, team 5Y3S9Y6Z27,
+  Developer ID signing, hardened runtime. Not sandboxed (a sandboxed app cannot reach
+  the paths that matter and complicates the daemon).
+- MIT license, public GitHub repo `xwrvnggp9n-star/SystemDataLens`. DMG release,
+  notarized when the Apple agreement is renewed.
+
+## Architecture
+
+Two executables in one bundle.
+
+1. `SystemDataLens.app` (runs as the user). UI, category engine, rules file,
+   user-owned cleanup (Move to Trash, `xcrun simctl`), raw-disk browsing.
+2. `SystemDataLensHelper` (runs as root via launchd). Registered with
+   `SMAppService.daemon(plistName: "app.sklar.SystemDataLens.helper.plist")`.
+   - Plist at `Contents/Library/LaunchDaemons/`, `BundleProgram =
+     Contents/MacOS/SystemDataLensHelper`, `MachServices` =
+     `app.sklar.SystemDataLens.helper`, `AssociatedBundleIdentifiers` = app ID.
+   - User approves once in System Settings > Login Items; app calls
+     `SMAppService.openSystemSettingsLoginItems()` when status is `.requiresApproval`.
+   - Launched on demand; exits after 120 s idle with no connections.
+   - Version handshake: app calls `helperVersion()`; on mismatch it unregisters and
+     re-registers so an updated app never talks to a stale helper.
+
+### XPC
+
+- `NSXPCListener(machServiceName:)` in the helper. In `shouldAcceptNewConnection`
+  call `connection.setCodeSigningRequirement(...)` (macOS 13+) with
+  `anchor apple generic and identifier "app.sklar.SystemDataLens" and
+  certificate leaf[subject.OU] = "5Y3S9Y6Z27"`. The app sets the mirror requirement
+  on its side for the helper identifier.
+- The helper derives the calling user from `connection.effectiveUserIdentifier`
+  (`getpwuid`) and never trusts a home path sent by the app.
+- Protocol (all replies are Codable payloads encoded as `Data`, so the protocol is a
+  handful of `@objc` methods taking/returning `Data`):
+  - `helperVersion() -> String`
+  - `volumes() -> [APFSVolume]` from `/usr/sbin/diskutil apfs list -plist`, local
+    snapshots from `/usr/bin/tmutil listlocalsnapshots`, swap from
+    `sysctl vm.swapusage`, sleep image size.
+  - `startScan(root) -> scanID` (root restricted to a fixed list: the Data volume
+    `/System/Volumes/Data`, `/System/Volumes/Preboot`, `/System/Volumes/Recovery`
+    if mounted, `/System/Volumes/VM`), `scanProgress(scanID)`,
+    `children(scanID, nodeID) -> [Node]`, `cancelScan(scanID)`.
+    The tree stays in the helper; the app pulls children lazily, so large trees
+    never cross XPC whole.
+  - `cleanupTargets() -> [Target]` (root-owned targets only, with current sizes) and
+    `runCleanup(targetIDs) -> Report`. The app sends **target IDs, never paths**.
+
+### Scanner
+
+- `fts_open` with `FTS_PHYSICAL | FTS_XDEV | FTS_NOCHDIR`, sizes from
+  `st_blocks * 512` (allocated size, matches what the disk loses).
+- Hard links counted once per (dev, inode).
+- Scanning `/System/Volumes/Data` directly avoids firmlink double counting from `/`.
+- APFS clones and sparse files can make scanned totals exceed APFS "consumed". The
+  UI shows an **Unaccounted** row = APFS consumed - scanned, which can be negative,
+  with a note explaining why.
+- Unreadable entries (SIP-protected, dataless cloud files) are counted and listed
+  rather than silently skipped.
+
+### Category engine (app side)
+
+Reconstructs System Settings' categories from rules in `Resources/rules.json`
+(path globs relative to the Data volume, `~` = scanned user's home):
+
+- macOS = System volume + Preboot + Recovery + `Data:/System`.
+- Applications, Documents (home outside Library and hidden folders), Photos
+  (`*.photoslibrary`), Messages, Mail, iCloud Drive (`~/Library/Mobile Documents`),
+  Music, Developer (`~/Library/Developer`), Trash, Other Users & Shared.
+- System Data = everything else on the Data volume + VM volume + snapshots +
+  Unaccounted.
+- The same rules file supplies a plain-English description and a safety rating
+  (safe / app-rebuilds / user-data / system) for known paths, shown in the inspector.
+- Apple does not publish its exact rules; the README says the app reconstructs them.
+
+### UI
+
+- `NavigationSplitView`: sidebar (Categories, Raw Disk, Cleanup), detail view, and
+  an inspector for the selected item (path, size, description, safety, Reveal in
+  Finder, Move to Trash for user-owned items).
+- Detail toggles between an outline list with size bars and a squarified treemap
+  (SwiftUI `Canvas`, click to zoom, breadcrumb to go back).
+- Works without the helper in a limited mode (user-readable paths only) with a banner
+  offering to install the helper.
+
+### Cleanup
+
+Panel lists every target with size and a checkbox; user deselects any, sees the total,
+confirms. Targets are defined in code, not loaded from a file.
+
+- User-owned, done by the app, moved to Trash where possible:
+  `~/Library/Caches/*`, `~/.cache/*`, npm cache, pnpm store prune, Homebrew
+  `brew cleanup`, Xcode DerivedData, Google DriveFS `canceled_uploads/*`, old Claude
+  `local-agent-mode-sessions`, iOS simulator devices/runtimes (`xcrun simctl delete
+  unavailable`, runtime delete), empty Trash.
+- Root-owned, done by the helper: `/Library/Caches/*`, `/private/var/db/diagnostics`
+  via `/usr/bin/log erase --all`, `/Library/Updates/*` leftovers.
+- Helper deletion rules: resolve each target from its hardcoded allowlist, `lstat`
+  every path, never follow symlinks, `realpath` must stay under the allowlisted
+  prefix, refuse anything else. Report per-path result.
+
+## Verification
+
+- Unit tests for treemap layout, rule matching, size formatting, cleanup path
+  validation (symlink escape, `..`, prefix tricks).
+- On Sandy's Mac: compare per-volume totals to `diskutil`, compare category totals to
+  System Settings, run cleanup against dummy targets before real ones.
+- Code review by Codex and a Fable reviewer, with extra attention on the helper,
+  XPC validation and deletion code.
+
+web search: 
+web search: site:developer.apple.com SMAppService daemon BundleProgram LaunchDaemons plist AssociatedBundleIdentifiers ...
+web search: 
+web search: site:developer.apple.com APFS clones copy on write shared extents file allocated size st_blocks ...
+codex
+1. **BLOCKER — A signed app is not an authorized user.** The XPC signing requirement authenticates the client binary, but any local account able to run it could ask the root daemon to scan or clean systemwide data. Bind each request to its connection and audit user, enforce per-user access, and require an explicit admin authorization for privileged cleanup. Never accept a scan ID or node ID created by another connection.
+
+2. **BLOCKER — The deletion check has a race.** `lstat` followed by `realpath` followed by deletion lets another process replace a path between checks. Walk from a trusted directory using directory file descriptors and `openat` with no-follow checks; verify each component and delete with `unlinkat`. Refuse mount-point crossings and unexpected ownership. Treat wildcard children under `/Library/Caches` and `/Library/Updates` as untrusted.
+
+3. **BLOCKER — “Known-safe” overstates the cleanup list.** `/Library/Updates`, `/private/var/db/diagnostics`, Google Drive `canceled_uploads`, and agent session directories can contain active, pending, or recoverable data. Remove broad deletion for these targets until each has a documented lifecycle check and a tested recovery path. `log erase --all` is a systemwide log purge, not deletion of one selected directory.
+
+4. **SHOULD — The daemon’s scan API needs resource limits.** A signed client can request repeated root scans and retain large trees indefinitely. Cap concurrent scans, memory, traversal time, response size, and request size; expire scan state on disconnect and validate every `Data` payload before decoding.
+
+5. **SHOULD — The SMAppService plist is underspecified.** Specify and test `Label`, `MachServices` with a Boolean `true`, `BundleProgram`, and the exact `Contents/Library/LaunchDaemons` placement. Sign the helper and outer app in the correct order, then verify the final DMG’s signatures and registration on a clean macOS 14+ machine. Apple’s [SMAppService example](https://developer.apple.com/forums/thread/802443) confirms this layout.
+
+6. **SHOULD — Approval and upgrade handling need a state machine.** A daemon requires **admin** approval before launch, and `register()` can report already registered or denied. Unregistering and re-registering on every version mismatch can disrupt approval and active work. Handle each [service status and registration error](https://developer.apple.com/documentation/servicemanagement/smappservice/register%28%29?changes=_4), and test replacement updates with a new helper inode.
+
+7. **BLOCKER — `st_blocks * 512` does not equal reclaimable space on APFS.** Clones share extents; snapshots can retain blocks after deletion; compression and metadata complicate attribution. Label this value “file allocated blocks,” never “what the disk loses,” and measure actual free-space change separately after cleanup. Keep container usage and scanned file totals as different metrics.
+
+8. **SHOULD — The “Unaccounted” calculation mixes accounting domains.** APFS container consumed space includes other volumes, snapshots, metadata, and potentially purgeable space. Subtracting scans from it creates a misleading residual, especially when cloned extents are counted twice. Reconcile by APFS container and volume role, show snapshots and purgeable space separately where measurable, and label any residual as unexplained.
+
+9. **SHOULD — Dataless files may make scanning change the result.** Traversal or metadata calls can materialize cloud-backed directories, causing network access and new disk use. Detect `SF_DATALESS`, avoid reading contents, and disclose that enumeration itself may materialize intermediate folders. Apple documents this behavior in [TN3150](https://developer.apple.com/documentation/technotes/tn3150-getting-ready-for-data-less-files?changes=_3).
+
+10. **SHOULD — Snapshot enumeration is not snapshot sizing.** `tmutil listlocalsnapshots` gives a list, not each snapshot’s exclusive bytes or reclaimable size. Do not add snapshot “sizes” to System Data without a supported measurement; show names and a separately sourced aggregate estimate.
+
+11. **SHOULD — The category reconstruction will diverge materially from Storage Settings.** Apple categorizes by app and file type as well as location: iCloud Desktop/Documents, iOS backups, system apps, media purchases, Music Creation, and the designated System Photo Library defeat the proposed globs. Present these as **app-defined categories**, avoid claiming path-level correspondence to Apple’s bars, and add explicit rules for the documented cases. [Apple’s category descriptions](https://support.apple.com/en-au/guide/mac-help/mchl3d437fbc/mac) are the baseline.
+
+12. **SHOULD — User cleanup commands need per-user execution and previews.** Run `simctl`, package-manager commands, Trash operations, and cloud-provider cleanup only in the affected user’s session, never in the root daemon. Discover their actual locations, show the exact items and estimated impact, and treat “prune,” runtime deletion, and empty Trash as irreversible operations.
+
+13. **SHOULD — Verification needs hostile-machine tests.** Add tests with a second local user, forged IDs, oversized XPC payloads, symlink swaps during deletion, bind/mount crossings, hard links, clones, snapshots, dataless folders, and an app update while the daemon is active. These exercise the main failure modes that dummy cleanup targets will miss.
+tokens used
+24,008
+1. **BLOCKER — A signed app is not an authorized user.** The XPC signing requirement authenticates the client binary, but any local account able to run it could ask the root daemon to scan or clean systemwide data. Bind each request to its connection and audit user, enforce per-user access, and require an explicit admin authorization for privileged cleanup. Never accept a scan ID or node ID created by another connection.
+
+2. **BLOCKER — The deletion check has a race.** `lstat` followed by `realpath` followed by deletion lets another process replace a path between checks. Walk from a trusted directory using directory file descriptors and `openat` with no-follow checks; verify each component and delete with `unlinkat`. Refuse mount-point crossings and unexpected ownership. Treat wildcard children under `/Library/Caches` and `/Library/Updates` as untrusted.
+
+3. **BLOCKER — “Known-safe” overstates the cleanup list.** `/Library/Updates`, `/private/var/db/diagnostics`, Google Drive `canceled_uploads`, and agent session directories can contain active, pending, or recoverable data. Remove broad deletion for these targets until each has a documented lifecycle check and a tested recovery path. `log erase --all` is a systemwide log purge, not deletion of one selected directory.
+
+4. **SHOULD — The daemon’s scan API needs resource limits.** A signed client can request repeated root scans and retain large trees indefinitely. Cap concurrent scans, memory, traversal time, response size, and request size; expire scan state on disconnect and validate every `Data` payload before decoding.
+
+5. **SHOULD — The SMAppService plist is underspecified.** Specify and test `Label`, `MachServices` with a Boolean `true`, `BundleProgram`, and the exact `Contents/Library/LaunchDaemons` placement. Sign the helper and outer app in the correct order, then verify the final DMG’s signatures and registration on a clean macOS 14+ machine. Apple’s [SMAppService example](https://developer.apple.com/forums/thread/802443) confirms this layout.
+
+6. **SHOULD — Approval and upgrade handling need a state machine.** A daemon requires **admin** approval before launch, and `register()` can report already registered or denied. Unregistering and re-registering on every version mismatch can disrupt approval and active work. Handle each [service status and registration error](https://developer.apple.com/documentation/servicemanagement/smappservice/register%28%29?changes=_4), and test replacement updates with a new helper inode.
+
+7. **BLOCKER — `st_blocks * 512` does not equal reclaimable space on APFS.** Clones share extents; snapshots can retain blocks after deletion; compression and metadata complicate attribution. Label this value “file allocated blocks,” never “what the disk loses,” and measure actual free-space change separately after cleanup. Keep container usage and scanned file totals as different metrics.
+
+8. **SHOULD — The “Unaccounted” calculation mixes accounting domains.** APFS container consumed space includes other volumes, snapshots, metadata, and potentially purgeable space. Subtracting scans from it creates a misleading residual, especially when cloned extents are counted twice. Reconcile by APFS container and volume role, show snapshots and purgeable space separately where measurable, and label any residual as unexplained.
+
+9. **SHOULD — Dataless files may make scanning change the result.** Traversal or metadata calls can materialize cloud-backed directories, causing network access and new disk use. Detect `SF_DATALESS`, avoid reading contents, and disclose that enumeration itself may materialize intermediate folders. Apple documents this behavior in [TN3150](https://developer.apple.com/documentation/technotes/tn3150-getting-ready-for-data-less-files?changes=_3).
+
+10. **SHOULD — Snapshot enumeration is not snapshot sizing.** `tmutil listlocalsnapshots` gives a list, not each snapshot’s exclusive bytes or reclaimable size. Do not add snapshot “sizes” to System Data without a supported measurement; show names and a separately sourced aggregate estimate.
+
+11. **SHOULD — The category reconstruction will diverge materially from Storage Settings.** Apple categorizes by app and file type as well as location: iCloud Desktop/Documents, iOS backups, system apps, media purchases, Music Creation, and the designated System Photo Library defeat the proposed globs. Present these as **app-defined categories**, avoid claiming path-level correspondence to Apple’s bars, and add explicit rules for the documented cases. [Apple’s category descriptions](https://support.apple.com/en-au/guide/mac-help/mchl3d437fbc/mac) are the baseline.
+
+12. **SHOULD — User cleanup commands need per-user execution and previews.** Run `simctl`, package-manager commands, Trash operations, and cloud-provider cleanup only in the affected user’s session, never in the root daemon. Discover their actual locations, show the exact items and estimated impact, and treat “prune,” runtime deletion, and empty Trash as irreversible operations.
+
+13. **SHOULD — Verification needs hostile-machine tests.** Add tests with a second local user, forged IDs, oversized XPC payloads, symlink swaps during deletion, bind/mount crossings, hard links, clones, snapshots, dataless folders, and an app update while the daemon is active. These exercise the main failure modes that dummy cleanup targets will miss.

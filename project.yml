@@ -1,0 +1,88 @@
+name: SystemDataLens
+options:
+  bundleIdPrefix: app.sklar
+  createIntermediateGroups: true
+  deploymentTarget:
+    macOS: "14.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Developer ID Application"
+    DEVELOPMENT_TEAM: 5Y3S9Y6Z27
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS: "NO"
+    ENABLE_HARDENED_RUNTIME: "YES"
+    OTHER_CODE_SIGN_FLAGS: "--timestamp"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  SystemDataLens:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+      - path: Shared
+      - path: Helper/app.sklar.SystemDataLens.helper.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchDaemons
+    dependencies:
+      - target: SystemDataLensHelper
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens
+        PRODUCT_NAME: SystemDataLens
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/SystemDataLens.entitlements
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+
+  SystemDataLensHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Helper
+        excludes:
+          - "*.plist"
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens.helper
+        PRODUCT_NAME: SystemDataLensHelper
+        SKIP_INSTALL: "YES"
+        CREATE_INFOPLIST_SECTION_IN_BINARY: "YES"
+        INFOPLIST_FILE: Helper/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Helper/Helper.entitlements
+
+  SystemDataLensTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+      - path: Shared
+      - path: App/Model/Categories.swift
+      - path: App/Model/TreemapLayout.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: "NO"
+
+schemes:
+  SystemDataLens:
+    build:
+      targets:
+        SystemDataLens: all
+    test:
+      targets:
+        - SystemDataLensTests
