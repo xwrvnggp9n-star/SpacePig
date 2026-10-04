@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import Security
@@ -32,6 +33,7 @@ final class HelperClient {
     private(set) var state: State = .checking
     private let service = SMAppService.daemon(plistName: HelperConstants.launchdPlistName)
     @ObservationIgnored private var connection: NSXPCConnection?
+    @ObservationIgnored private var retriedAfterFailure = false
 
     var isReady: Bool { if case .ready = state { return true } else { return false } }
 
@@ -111,6 +113,13 @@ final class HelperClient {
                 ? .ready(version: again)
                 : .failed("Helper version \(again) does not match the app (\(HelperClient.appVersion)). Use Reinstall Helper.")
         } catch {
+            // Usually an old helper whose executable was replaced by an app update: this app
+            // refuses its stale signature. Restart it through launchd once, then report.
+            if !retriedAfterFailure {
+                retriedAfterFailure = true
+                await reinstall()
+                return
+            }
             state = .failed(error.localizedDescription)
         }
     }
@@ -122,11 +131,11 @@ final class HelperClient {
         let c = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
         c.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
         c.setCodeSigningRequirement(HelperConstants.helperRequirement)
-        c.invalidationHandler = { [weak self] in
-            Task { @MainActor in self?.connection = nil }
+        c.invalidationHandler = { [weak self, weak c] in
+            Task { @MainActor in if let self, self.connection === c { self.connection = nil } }
         }
-        c.interruptionHandler = { [weak self] in
-            Task { @MainActor in self?.connection = nil }
+        c.interruptionHandler = { [weak self, weak c] in
+            Task { @MainActor in if let self, self.connection === c { self.connection = nil } }
         }
         c.resume()
         connection = c
@@ -167,7 +176,8 @@ final class HelperClient {
         if let startError { throw HelperError.helper(startError) }
         var status: ScanStatus
         repeat {
-            try await Task.sleep(for: .milliseconds(400))
+            // try? so cancellation falls through to the check below and reaches the helper.
+            try? await Task.sleep(for: .milliseconds(400))
             if Task.isCancelled {
                 _ = try? await call { proxy, done in proxy.cancelScan { done(.success(())) } }
                 throw CancellationError()
@@ -207,9 +217,14 @@ final class HelperClient {
     }
 
     /// Asks for an administrator password (or Touch ID), then runs root targets.
-    func runRootCleanup(ids: [String]) async throws -> CleanupReport {
+    /// Shows the administrator prompt. Call before deleting anything, so cancelling it
+    /// leaves the whole cleanup undone.
+    nonisolated func authorizeCleanup() async throws -> AdminAuthorization {
+        try await Task.detached { try AdminAuthorization() }.value
+    }
+
+    func runRootCleanup(ids: [String], auth: AdminAuthorization) async throws -> CleanupReport {
         guard isReady else { throw HelperError.notReady }
-        let auth = try await Task.detached { try AdminAuthorization() }.value
         let request = try JSONEncoder().encode(CleanupRequest(targetIDs: ids))
         let form = auth.externalForm
         let data: Data = try await call { proxy, done in
@@ -241,9 +256,17 @@ final class AdminAuthorization: @unchecked Sendable {
 
     struct Denied: LocalizedError { var errorDescription: String? { "Administrator authorization was cancelled." } }
 
-    init() throws {
+    /// - Parameter withoutRights: self-test only; produces a valid authorization that holds no rights.
+    init(withoutRights: Bool = false) throws {
         var ref: AuthorizationRef?
         guard AuthorizationCreate(nil, nil, [], &ref) == errAuthorizationSuccess, let ref else { throw Denied() }
+        if withoutRights {
+            var ext = AuthorizationExternalForm()
+            guard AuthorizationMakeExternalForm(ref, &ext) == errAuthorizationSuccess else { throw Denied() }
+            self.ref = ref
+            self.externalForm = withUnsafeBytes(of: &ext) { Data($0) }
+            return
+        }
         let status: OSStatus = HelperConstants.cleanupRight.withCString { name in
             var item = AuthorizationItem(name: name, valueLength: 0, value: nil, flags: 0)
             return withUnsafeMutablePointer(to: &item) { itemPtr in
@@ -266,5 +289,32 @@ final class AdminAuthorization: @unchecked Sendable {
 
     deinit {
         if let ref { AuthorizationFree(ref, [.destroyRights]) }
+    }
+}
+
+/// `open -a SystemDataLens --args --selftest-auth` checks that the helper refuses a
+/// cleanup request carrying an authorization with no rights, writes the result to
+/// ~/Library/Logs/SystemDataLens-selftest.log, and quits. The request names a snapshot
+/// date that cannot exist, so nothing is deleted even if the check were to fail.
+enum SelfTest {
+    @MainActor
+    static func runIfRequested(_ helper: HelperClient) async {
+        guard CommandLine.arguments.contains("--selftest-auth") else { return }
+        var lines: [String] = ["SystemDataLens self-test \(Date())", "helper state: \(helper.state)"]
+        if helper.isReady {
+            do {
+                let empty = try AdminAuthorization(withoutRights: true)
+                _ = try await helper.runRootCleanup(ids: ["root.tm-snapshot.2000-01-01-000000"], auth: empty)
+                lines.append("FAIL: helper accepted an authorization without rights")
+            } catch {
+                let msg = error.localizedDescription
+                lines.append((msg.contains("not granted") ? "PASS" : "UNEXPECTED") + ": \(msg)")
+            }
+        } else {
+            lines.append("SKIP: helper not ready")
+        }
+        let url = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/SystemDataLens-selftest.log")
+        try? (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+        NSApplication.shared.terminate(nil)
     }
 }

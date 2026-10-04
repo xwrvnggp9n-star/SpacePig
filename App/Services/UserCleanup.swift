@@ -3,7 +3,18 @@ import Foundation
 
 /// Cleanup targets the app runs as the logged-in user. Nothing here needs root.
 enum UserCleanup {
-    static var home: String { NSHomeDirectory() }
+    /// The home folder with symlinks resolved; SafeDeleter refuses symlinked paths.
+    static let home: String = {
+        guard let real = realpath(NSHomeDirectory(), nil) else { return NSHomeDirectory() }
+        defer { free(real) }
+        return String(cString: real)
+    }()
+
+    /// True when Xcode or the Command Line Tools are installed, so xcrun won't pop the
+    /// "install developer tools" dialog.
+    static let hasDeveloperTools: Bool = {
+        Command.run("/usr/bin/xcode-select", ["-p"], timeout: 10).status == 0
+    }()
 
     /// Environment for user-side tools: a predictable PATH and nothing inherited.
     static var toolEnvironment: [String: String] {
@@ -58,7 +69,7 @@ enum UserCleanup {
         case "user.drivefs-canceled":
             let base = h + "/Library/Application Support/Google/DriveFS/canceled_uploads"
             let accounts = (try? FileManager.default.contentsOfDirectory(atPath: base)) ?? []
-            return accounts.map { DirSpec(path: base + "/" + $0) }
+            return accounts.filter(isSafeName).map { DirSpec(path: base + "/" + $0) }
         case "user.claude-sessions":
             return [DirSpec(path: h + "/Library/Application Support/Claude/local-agent-mode-sessions")]
         case "user.trash":
@@ -156,8 +167,7 @@ enum UserCleanup {
         dirTarget("user.coresim-caches", group: "Developer", title: "Simulator caches",
                   detail: "CoreSimulator caches. Rebuilt as needed.", on: true)
 
-        if FileManager.default.fileExists(atPath: home + "/Library/Developer/CoreSimulator/Devices"),
-           FileManager.default.isExecutableFile(atPath: "/usr/bin/xcrun") {
+        if FileManager.default.fileExists(atPath: home + "/Library/Developer/CoreSimulator/Devices"), hasDeveloperTools {
             out.append(CleanupTarget(id: "user.sim-unavailable", group: "Developer",
                                      title: "Simulators for runtimes that are no longer installed",
                                      detail: "Removes simulator devices whose iOS version is gone.", executor: .user,
@@ -166,8 +176,7 @@ enum UserCleanup {
         }
         out += simulatorRuntimes()
 
-        if let npm = tool("npm") {
-            _ = npm
+        if tool("npm") != nil {
             let m = SafeDeleter.measureContents(of: home + "/.npm/_cacache")
             out.append(CleanupTarget(id: "user.npm", group: "Package managers", title: "npm download cache",
                                      detail: "Packages npm downloaded. Fetched again when needed.", executor: .user,
@@ -184,7 +193,7 @@ enum UserCleanup {
             let dry = Command.run(brew, ["cleanup", "--prune=all", "-s", "-n"], environment: toolEnvironment, timeout: 120)
             out.append(CleanupTarget(id: "user.brew", group: "Package managers", title: "Old Homebrew versions and downloads",
                                      detail: "Removes outdated package versions and cached downloads.", executor: .user,
-                                     defaultSelected: true, irreversible: true, estimatedBytes: parseBrewEstimate(dry.output),
+                                     defaultSelected: true, irreversible: true, estimatedBytes: parseBrewEstimate(dry.combined),
                                      preview: Array(dry.output.split(separator: "\n").prefix(40).map(String.init)),
                                      command: "brew cleanup --prune=all -s"))
         }
@@ -200,7 +209,8 @@ enum UserCleanup {
     }
 
     private static func simulatorRuntimes() -> [CleanupTarget] {
-        guard FileManager.default.isExecutableFile(atPath: "/usr/bin/xcrun") else { return [] }
+        guard hasDeveloperTools,
+              FileManager.default.fileExists(atPath: home + "/Library/Developer/CoreSimulator") else { return [] }
         let out = Command.run("/usr/bin/xcrun", ["simctl", "runtime", "list", "-j"], environment: toolEnvironment, timeout: 60)
         guard out.status == 0, let data = out.output.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: [String: Any]] else { return [] }
@@ -252,7 +262,7 @@ enum UserCleanup {
         var result = CleanupTargetResult(targetID: id, freedBytes: 0, removed: 0, failed: 0, failures: [], output: nil)
         if let cmd = commandSpec(for: id) {
             let out = Command.run(cmd.path, cmd.args, environment: toolEnvironment, timeout: cmd.timeout)
-            result.output = "$ \(cmd.display)\n" + out.output
+            result.output = "$ \(cmd.display)\n" + out.combined
             if out.status == 0 { result.removed = 1 } else { result.failed = 1 }
             return result
         }

@@ -129,23 +129,29 @@ final class BulkScanner {
 
         while let (dirIndex, dirPath) = stack.popLast() {
             if isCancelled { break }
-            let fd = open(dirPath, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            // No symlink anywhere in the path, so a swapped parent can't redirect the walk.
+            let fd = open(dirPath, O_RDONLY | O_DIRECTORY | BulkScanner.O_NOFOLLOW_ANY | O_CLOEXEC)
             if fd < 0 {
                 tree.addFlags(.unreadable, at: dirIndex)
                 continue
             }
-            var aggSize: UInt64 = 0, aggPriv: UInt64 = 0, aggCount: UInt32 = 0
+            var aggSize: UInt64 = 0, aggPriv: UInt64 = 0, aggPurg: UInt64 = 0, aggCount: UInt32 = 0
 
             readLoop: while true {
                 let n = getattrlistbulk(fd, &al, buf, bufSize, A.optCmnExtended)
                 if n < 0 { tree.addFlags(.unreadable, at: dirIndex); break }
                 if n == 0 { break }
                 var cursor = buf
+                let end = buf + bufSize
                 for _ in 0..<n {
-                    let entry = BulkScanner.parse(cursor)
-                    cursor += Int(cursor.loadUnaligned(as: UInt32.self))
+                    // Every record must fit in the buffer; stop reading this batch otherwise.
+                    guard end - cursor >= 24 else { break }
+                    let length = Int(cursor.loadUnaligned(as: UInt32.self))
+                    guard length >= 24, length <= end - cursor else { break }
+                    let parsed = BulkScanner.parse(cursor, length: length)
+                    cursor += length
                     visitedSinceUpdate += 1
-                    if entry.error != 0 { continue }
+                    guard let entry = parsed, entry.error == 0 else { continue }
 
                     if entry.isDir {
                         var f: NodeFlags = .directory
@@ -171,10 +177,12 @@ final class BulkScanner {
                     if entry.stFlags & A.sfDataless != 0 { f.insert(.dataless) }
                     bytesSinceUpdate &+= size
 
+                    let purg = f.contains(.purgeable) ? size : 0
                     if size < aggregateBelow && !f.contains(.dataless) {
-                        aggSize &+= size; aggPriv &+= priv; aggCount += 1
+                        aggSize &+= size; aggPriv &+= priv; aggPurg &+= purg; aggCount += 1
                     } else {
-                        tree.append(name: entry.name, parent: dirIndex, size: size, privateSize: priv, flags: f, files: 1)
+                        tree.append(name: entry.name, parent: dirIndex, size: size, privateSize: priv, flags: f, files: 1,
+                                    purgeable: purg)
                     }
                 }
                 if visitedSinceUpdate >= 4096 {
@@ -187,8 +195,10 @@ final class BulkScanner {
             close(fd)
             if aggCount > 0 {
                 let label = aggCount == 1 ? "1 smaller file" : "\(aggCount) smaller files"
+                var f: NodeFlags = .aggregate
+                if aggPurg > 0 && aggPurg == aggSize { f.insert(.purgeable) }
                 tree.append(name: "(\(label))", parent: dirIndex, size: aggSize, privateSize: aggPriv,
-                            flags: .aggregate, files: aggCount)
+                            flags: f, files: aggCount, purgeable: aggPurg)
             }
         }
         let v = visitedSinceUpdate, b = bytesSinceUpdate
@@ -197,9 +207,14 @@ final class BulkScanner {
         return tree
     }
 
-    /// Parses one getattrlistbulk entry. Attributes appear in bitmap order, each 4-byte aligned.
-    private static func parse(_ start: UnsafeMutableRawPointer) -> Entry {
+    /// Parses one getattrlistbulk record of `length` bytes. Attributes follow the
+    /// returned-attributes set in bitmap order, except ATTR_CMN_ERROR, which comes first
+    /// (getattrlistbulk(2) and Apple's sample code). Returns nil if any field would read
+    /// past the record.
+    private static func parse(_ start: UnsafeMutableRawPointer, length: Int) -> Entry? {
+        let recordEnd = start + length
         var p = start + 4 // skip entry length
+        func fits(_ bytes: Int) -> Bool { recordEnd - p >= bytes }
         let returned = (
             common: p.loadUnaligned(as: UInt32.self),
             dir: p.loadUnaligned(fromByteOffset: 8, as: UInt32.self),
@@ -209,16 +224,22 @@ final class BulkScanner {
         p += 20 // attribute_set_t
         var e = Entry(name: "")
         if returned.common & A.cmnError != 0 {
+            guard fits(4) else { return nil }
             e.error = p.loadUnaligned(as: UInt32.self); p += 4
         }
         if returned.common & A.cmnName != 0 {
-            let off = p.loadUnaligned(as: Int32.self)
-            let len = p.loadUnaligned(fromByteOffset: 4, as: UInt32.self)
-            let namePtr = (p + Int(off)).assumingMemoryBound(to: UInt8.self)
-            let byteCount = max(Int(len) - 1, 0) // length includes the trailing NUL
-            e.name = String(decoding: UnsafeBufferPointer(start: namePtr, count: byteCount), as: UTF8.self)
+            guard fits(8) else { return nil }
+            let off = Int(p.loadUnaligned(as: Int32.self))
+            let len = Int(p.loadUnaligned(fromByteOffset: 4, as: UInt32.self))
+            let namePtr = p + off
+            // The name must lie inside this record; length includes the trailing NUL.
+            guard off >= 0, len >= 1, namePtr >= start, recordEnd - namePtr >= len else { return nil }
+            e.name = String(decoding: UnsafeBufferPointer(start: namePtr.assumingMemoryBound(to: UInt8.self), count: len - 1),
+                            as: UTF8.self)
             p += 8
         }
+        // Fixed-size fields: 4 + 4 + 4 + 8 + 4 + 4 + 8 + 8 + 8 bytes at most.
+        guard fits(fixedBytes(returned)) else { return nil }
         if returned.common & A.cmnDevID != 0 { e.dev = p.loadUnaligned(as: Int32.self); p += 4 }
         if returned.common & A.cmnObjType != 0 {
             e.isDir = p.loadUnaligned(as: UInt32.self) == A.vDir; p += 4
@@ -232,4 +253,20 @@ final class BulkScanner {
         if returned.fork & A.extFlags != 0 { e.ext = p.loadUnaligned(as: UInt64.self); p += 8 }
         return e
     }
+
+    private static func fixedBytes(_ r: (common: UInt32, dir: UInt32, file: UInt32, fork: UInt32)) -> Int {
+        var n = 0
+        if r.common & A.cmnDevID != 0 { n += 4 }
+        if r.common & A.cmnObjType != 0 { n += 4 }
+        if r.common & A.cmnFlags != 0 { n += 4 }
+        if r.common & A.cmnFileID != 0 { n += 8 }
+        if r.dir & A.dirMountStatus != 0 { n += 4 }
+        if r.file & A.fileLinkCount != 0 { n += 4 }
+        if r.file & A.fileAllocSize != 0 { n += 8 }
+        if r.fork & A.extPrivateSize != 0 { n += 8 }
+        if r.fork & A.extFlags != 0 { n += 8 }
+        return n
+    }
+
+    private static let O_NOFOLLOW_ANY: Int32 = 0x2000_0000
 }

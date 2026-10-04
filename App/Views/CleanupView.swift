@@ -44,11 +44,21 @@ final class CleanupModel {
         let chosen = selectedTargets
         let userIDs = chosen.filter { $0.executor == .user }.map(\.id)
         let rootIDs = chosen.filter { $0.executor == .root }.map(\.id)
-        var results: [CleanupTargetResult] = []
-        results += await Task.detached(priority: .userInitiated) { userIDs.map { UserCleanup.run(id: $0) } }.value
+        // Ask for the administrator password first; cancelling it removes nothing.
+        var auth: AdminAuthorization?
         if !rootIDs.isEmpty {
             do {
-                results += try await helper.runRootCleanup(ids: rootIDs).results
+                auth = try await helper.authorizeCleanup()
+            } catch {
+                runError = error.localizedDescription
+                return
+            }
+        }
+        var results: [CleanupTargetResult] = []
+        results += await Task.detached(priority: .userInitiated) { userIDs.map { UserCleanup.run(id: $0) } }.value
+        if let auth {
+            do {
+                results += try await helper.runRootCleanup(ids: rootIDs, auth: auth).results
             } catch {
                 runError = error.localizedDescription
             }
@@ -79,6 +89,12 @@ struct CleanupView: View {
             Button("Clean Up", role: .destructive) { Task { await cleanup.run(helper: model.helper) } }
         } message: {
             Text(confirmMessage)
+        }
+        .alert("Cleanup did not run", isPresented: Binding(get: { cleanup.report == nil && cleanup.runError != nil },
+                                                           set: { if !$0 { cleanup.runError = nil } })) {
+            Button("OK") { cleanup.runError = nil }
+        } message: {
+            Text(cleanup.runError ?? "")
         }
         .sheet(isPresented: Binding(get: { cleanup.report != nil }, set: { if !$0 { cleanup.report = nil } })) {
             ReportSheet(results: cleanup.report ?? [], targets: cleanup.targets, error: cleanup.runError) {

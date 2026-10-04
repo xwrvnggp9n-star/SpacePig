@@ -38,7 +38,9 @@ final class HelperSession: NSObject, HelperProtocol {
     private let queue = DispatchQueue(label: "session")
     private var scanner: BulkScanner?
     private var status = ScanStatus(state: .idle, root: nil, itemsVisited: 0, bytesSeen: 0, error: nil, chunkCount: 0)
-    private var chunks: [Data] = []
+    /// Encoded tree, sliced into chunks on demand so only one copy is held.
+    private var encodedTree = Data()
+    private var chunkCount: Int { (encodedTree.count + HelperConstants.chunkSize - 1) / HelperConstants.chunkSize }
     private var invalidated = false
 
     init(uid: uid_t, pid: pid_t) {
@@ -50,7 +52,7 @@ final class HelperSession: NSObject, HelperProtocol {
         queue.sync {
             invalidated = true
             scanner?.cancel()
-            chunks = []
+            encodedTree = Data()
         }
     }
 
@@ -71,7 +73,7 @@ final class HelperSession: NSObject, HelperProtocol {
             guard HelperLocks.claimScan(self) else { return "Another window is scanning. Try again when it finishes." }
             let scanner = BulkScanner(rootPath: root)
             self.scanner = scanner
-            chunks = []
+            encodedTree = Data()
             status = ScanStatus(state: .running, root: root, itemsVisited: 0, bytesSeen: 0, error: nil, chunkCount: 0)
             IdleMonitor.shared.beginWork()
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -88,24 +90,20 @@ final class HelperSession: NSObject, HelperProtocol {
             IdleMonitor.shared.endWork()
         }
         do {
-            let tree = try scanner.scan()
-            let cancelled = scanner.progress.cancelled
-            let data = cancelled ? Data() : tree.encoded()
-            var parts: [Data] = []
-            var offset = 0
-            while offset < data.count {
-                let end = min(offset + HelperConstants.chunkSize, data.count)
-                parts.append(data.subdata(in: offset..<end))
-                offset = end
+            // The tree goes out of scope once encoded, so only the encoding stays in memory.
+            let data: Data = try autoreleasepool {
+                let tree = try scanner.scan()
+                return scanner.progress.cancelled ? Data() : tree.encoded()
             }
+            let cancelled = scanner.progress.cancelled
             queue.sync {
                 guard !invalidated else { return }
-                chunks = parts
+                encodedTree = data
                 let p = scanner.progress
                 status.itemsVisited = p.itemsVisited
                 status.bytesSeen = p.bytesSeen
                 status.state = cancelled ? .cancelled : .finished
-                status.chunkCount = parts.count
+                status.chunkCount = chunkCount
                 self.scanner = nil
             }
         } catch {
@@ -132,11 +130,13 @@ final class HelperSession: NSObject, HelperProtocol {
 
     func fetchTreeChunk(index: Int, reply: @escaping (Data?, Int) -> Void) {
         let result: (Data?, Int) = queue.sync {
-            guard status.state == .finished, index >= 0, index < chunks.count else { return (nil, chunks.count) }
-            let chunk = chunks[index]
-            let total = chunks.count
+            let total = chunkCount
+            guard status.state == .finished, index >= 0, index < total else { return (nil, total) }
+            let start = index * HelperConstants.chunkSize
+            let end = min(start + HelperConstants.chunkSize, encodedTree.count)
+            let chunk = encodedTree.subdata(in: start..<end)
             if index == total - 1 {
-                chunks = []
+                encodedTree = Data()
                 status = ScanStatus(state: .idle, root: nil, itemsVisited: status.itemsVisited,
                                     bytesSeen: status.bytesSeen, error: nil, chunkCount: 0)
             }
@@ -148,7 +148,7 @@ final class HelperSession: NSObject, HelperProtocol {
     func cancelScan(reply: @escaping () -> Void) {
         queue.sync {
             scanner?.cancel()
-            chunks = []
+            encodedTree = Data()
         }
         reply()
     }
@@ -166,16 +166,17 @@ final class HelperSession: NSObject, HelperProtocol {
             reply((try? JSONEncoder().encode(report)) ?? Data())
         }
         guard request.count <= HelperConstants.maxRequestBytes,
-              let req = try? JSONDecoder().decode(CleanupRequest.self, from: request),
-              !req.targetIDs.isEmpty, req.targetIDs.count <= 64 else {
+              let decoded = try? JSONDecoder().decode(CleanupRequest.self, from: request),
+              !decoded.targetIDs.isEmpty, decoded.targetIDs.count <= 64 else {
             return fail("Bad request.")
         }
+        var seen = Set<String>()
+        let ids = decoded.targetIDs.filter { seen.insert($0).inserted }
         guard AuthorizationCheck.verify(externalForm: authorization, right: HelperConstants.cleanupRight) else {
             helperLog.error("pid \(self.pid) cleanup refused: authorization failed")
             return fail("Administrator authorization was not granted.")
         }
-        let known = Set(RootTargets.list().map(\.id))
-        if let unknown = req.targetIDs.first(where: { !known.contains($0) }) {
+        if let unknown = ids.first(where: { !RootTargets.isValidID($0) }) {
             return fail("Unknown cleanup target: \(unknown)")
         }
         guard HelperLocks.claimCleanup() else { return fail("A cleanup is already running.") }
@@ -185,16 +186,22 @@ final class HelperSession: NSObject, HelperProtocol {
                 HelperLocks.releaseCleanup()
                 IdleMonitor.shared.endWork()
             }
-            helperLog.notice("pid \(self.pid) uid \(self.uid) running cleanup: \(req.targetIDs.joined(separator: ","), privacy: .public)")
-            let results = req.targetIDs.map { RootTargets.run(id: $0) }
+            helperLog.notice("pid \(self.pid) uid \(self.uid) running cleanup: \(ids.joined(separator: ","), privacy: .public)")
+            let results = ids.map { RootTargets.run(id: $0) }
             let report = CleanupReport(results: results, error: nil)
             reply((try? JSONEncoder().encode(report)) ?? Data())
         }
     }
 
+    /// Exits so launchd starts the binary from the current app bundle next time. Refused
+    /// while any connection has a scan or cleanup in flight.
     func exitForUpgrade(reply: @escaping () -> Void) {
         reply()
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) {
+            guard !IdleMonitor.shared.isBusy else {
+                helperLog.info("upgrade exit postponed: work in flight")
+                return
+            }
             helperLog.info("exiting for upgrade")
             exit(0)
         }
@@ -216,9 +223,39 @@ enum AuthorizationCheck {
             var item = AuthorizationItem(name: name, valueLength: 0, value: nil, flags: 0)
             return withUnsafeMutablePointer(to: &item) { itemPtr -> Bool in
                 var rights = AuthorizationRights(count: 1, items: itemPtr)
-                let status = AuthorizationCopyRights(authRef, &rights, nil, [.extendRights], nil)
+                // No .extendRights: succeed only if the app already obtained this right in
+                // that authorization, so being root here never satisfies the check by itself.
+                let status = AuthorizationCopyRights(authRef, &rights, nil, [], nil)
                 return status == errAuthorizationSuccess
             }
+        }
+    }
+}
+
+enum AuthorizationRight {
+    /// Registers the cleanup right in the authorization database if it is missing: admin
+    /// password every time (timeout 0), never shared, and root alone does not satisfy it.
+    static func ensureRegistered() {
+        let name = HelperConstants.cleanupRight
+        if AuthorizationRightGet(name, nil) == errAuthorizationSuccess { return }
+        var authRef: AuthorizationRef?
+        guard AuthorizationCreate(nil, nil, [], &authRef) == errAuthorizationSuccess, let authRef else { return }
+        defer { AuthorizationFree(authRef, []) }
+        let rule: [String: Any] = [
+            "class": "user",
+            "group": "admin",
+            "shared": false,
+            "allow-root": false,
+            "timeout": 0,
+            "authenticate-user": true,
+            "session-owner": false,
+            "version": 1,
+            "comment": "Used by SystemDataLens before its helper removes system-wide files.",
+        ]
+        let status = AuthorizationRightSet(authRef, name, rule as CFDictionary,
+                                           "SystemDataLens wants to remove system caches or logs." as CFString, nil, nil)
+        if status != errAuthorizationSuccess {
+            helperLog.error("could not register authorization right: \(status)")
         }
     }
 }

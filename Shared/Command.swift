@@ -2,7 +2,14 @@ import Foundation
 
 /// Runs an executable by absolute path with no shell and a timeout.
 enum Command {
-    struct Output { var status: Int32; var output: String }
+    struct Output {
+        var status: Int32
+        /// Standard output only.
+        var output: String
+        var errors: String
+        /// Output followed by any error text, for showing to the user.
+        var combined: String { errors.isEmpty ? output : output + (output.isEmpty ? "" : "\n") + errors }
+    }
 
     /// - Parameter environment: the full environment for the child. Empty by default.
     static func run(_ path: String, _ args: [String], environment: [String: String] = [:],
@@ -12,16 +19,26 @@ enum Command {
         p.arguments = args
         p.environment = environment
         p.standardInput = FileHandle.nullDevice
-        let pipe = Pipe()
-        p.standardOutput = pipe
-        p.standardError = pipe
-        do { try p.run() } catch { return Output(status: -1, output: error.localizedDescription) }
+        let out = Pipe()
+        let err = Pipe()
+        p.standardOutput = out
+        p.standardError = err
+        do { try p.run() } catch { return Output(status: -1, output: error.localizedDescription, errors: "") }
         let killer = DispatchWorkItem { if p.isRunning { p.terminate() } }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        // Drain stderr concurrently so a chatty tool can't fill the pipe and stall.
+        var errData = Data()
+        let errDone = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            errData = err.fileHandleForReading.readDataToEndOfFile()
+            errDone.signal()
+        }
+        let data = out.fileHandleForReading.readDataToEndOfFile()
+        errDone.wait()
         p.waitUntilExit()
         killer.cancel()
-        let text = String(decoding: data.prefix(256 * 1024), as: UTF8.self)
-        return Output(status: p.terminationStatus, output: text)
+        return Output(status: p.terminationStatus,
+                      output: String(decoding: data.prefix(1024 * 1024), as: UTF8.self),
+                      errors: String(decoding: errData.prefix(64 * 1024), as: UTF8.self))
     }
 }

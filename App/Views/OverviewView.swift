@@ -173,7 +173,7 @@ struct OverviewView: View {
                     }
                     Text("Swap in use \(ByteFormat.string(v.swapUsed)) of \(ByteFormat.string(v.swapTotal)). Sleep image \(ByteFormat.string(v.sleepImage)).")
                     if v.purgeable > 0 {
-                        Text("About \(ByteFormat.string(v.purgeable)) is purgeable: macOS can free it on its own when space runs low.")
+                        Text("About \(ByteFormat.string(v.purgeable)) is purgeable: macOS can free it on its own when space runs low. Like System Settings, the Messages total leaves out attachments kept in iCloud.")
                     }
                 }
                 Text("Apple doesn't publish how System Settings assigns files to categories. These totals come from the rules bundled with the app and will differ somewhat from System Settings.")

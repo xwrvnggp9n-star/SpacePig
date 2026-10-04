@@ -170,6 +170,9 @@ struct Browser {
         var safety: Safety?
         var category: StorageCategory?
         var note: String?
+        /// Whole-subtree size regardless of the category filter (what Trash would remove).
+        var fullSize: UInt64?
+        var isDirectory = false
     }
 
     func details(for item: BrowserItem) -> Details {
@@ -181,7 +184,10 @@ struct Browser {
         d.displayPath = id == .data && path.hasPrefix(AppModel.dataRoot + "/")
             ? String(path.dropFirst(AppModel.dataRoot.count)) : path
         d.files = t.totalFiles[i]
-        if t.totalPrivate[i] < t.total[i] { d.unsharedSize = t.totalPrivate[i] }
+        d.fullSize = t.total[i]
+        d.isDirectory = t.nodeFlags(i).contains(.directory)
+        // Only meaningful when the shown size is the whole subtree.
+        if filter == nil, t.totalPrivate[i] < t.total[i] { d.unsharedSize = t.totalPrivate[i] }
         if id == .data, let index = model.index {
             d.category = StorageCategory.from(index: index.classification.categoryOf[i])
             if let r = index.rules.nearestRule(for: i, in: t, classification: index.classification) {

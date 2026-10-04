@@ -23,10 +23,17 @@ struct VolumeReport {
     var swapTotal: UInt64
     var sleepImage: UInt64
     var purgeable: UInt64
+    /// Devices of the running system's own volumes. A container can hold several macOS
+    /// installs, each with its own System and Data volume.
+    var systemDevice: String?
+    var dataDevice: String
 
     func volume(role: String) -> APFSVolumeInfo? { volumes.first { $0.roles.contains(role) } }
-    var system: APFSVolumeInfo? { volume(role: "System") }
-    var data: APFSVolumeInfo? { volume(role: "Data") }
+    var system: APFSVolumeInfo? {
+        if let dev = systemDevice, let v = volumes.first(where: { $0.device == dev }) { return v }
+        return volume(role: "System")
+    }
+    var data: APFSVolumeInfo? { volumes.first { $0.device == dataDevice } ?? volume(role: "Data") }
     var preboot: APFSVolumeInfo? { volume(role: "Preboot") }
     var recovery: APFSVolumeInfo? { volume(role: "Recovery") }
     var vm: APFSVolumeInfo? { volume(role: "VM") }
@@ -75,9 +82,17 @@ struct VolumeReport {
             purgeable = UInt64(important - Int64(plain))
         }
 
+        // "/" is a snapshot of the system volume (e.g. disk3s1s1 on volume disk3s1).
+        var systemDevice: String?
+        if let rootDev = plist(["info", "-plist", "/"])?["DeviceIdentifier"] as? String {
+            systemDevice = volumes.map(\.device).filter { rootDev == $0 || rootDev.hasPrefix($0 + "s") }
+                .max { $0.count < $1.count }
+        }
+
         return VolumeReport(containerDevice: containerRef, capacity: capacity, free: free, volumes: volumes,
                             snapshotNames: snapshots, swapUsed: swap.xsu_used, swapTotal: swap.xsu_total,
-                            sleepImage: sleepBytes, purgeable: purgeable)
+                            sleepImage: sleepBytes, purgeable: purgeable,
+                            systemDevice: systemDevice, dataDevice: dataDevice)
     }
 
     private static func plist(_ args: [String]) -> [String: Any]? {

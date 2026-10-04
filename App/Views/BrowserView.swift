@@ -90,9 +90,11 @@ struct BrowserView: View {
                     .foregroundStyle(item.isContainer ? Color.accentColor : .secondary)
                     .frame(width: 18)
                 Text(item.name).lineLimit(1).truncationMode(.middle)
+                    .layoutPriority(1)
+                    .help(item.name)
                 badges(item)
-                Spacer(minLength: 12)
-                SizeBar(fraction: Double(item.size) / Double(maxSize)).frame(width: 140, height: 8)
+                Spacer(minLength: 8)
+                SizeBar(fraction: Double(item.size) / Double(maxSize)).frame(minWidth: 40, maxWidth: 140).frame(height: 8)
                 Text(ByteFormat.string(item.size)).monospacedDigit().frame(width: 80, alignment: .trailing)
                 if parentSize > 0 {
                     Text(percent(item.size)).monospacedDigit().foregroundStyle(.secondary).frame(width: 50, alignment: .trailing)

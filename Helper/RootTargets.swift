@@ -41,6 +41,13 @@ enum RootTargets {
         return targets
     }
 
+    /// Validates an ID without touching the disk.
+    static func isValidID(_ id: String) -> Bool {
+        if id == libraryCachesID || id == unifiedLogsID { return true }
+        if id.hasPrefix(snapshotPrefix) { return isSnapshotDate(String(id.dropFirst(snapshotPrefix.count))) }
+        return false
+    }
+
     static func run(id: String) -> CleanupTargetResult {
         var result = CleanupTargetResult(targetID: id, freedBytes: 0, removed: 0, failed: 0, failures: [], output: nil)
         switch id {
@@ -52,13 +59,13 @@ enum RootTargets {
             result.failures = r.failures.prefix(50).map { CleanupItemResult(path: $0.path, ok: false, message: $0.reason) }
         case unifiedLogsID:
             let out = Command.run("/usr/bin/log", ["erase", "--all"], timeout: 120)
-            result.output = out.output
+            result.output = out.combined
             if out.status != 0 { result.failed = 1 } else { result.removed = 1 }
         case let s where s.hasPrefix(snapshotPrefix):
             let date = String(s.dropFirst(snapshotPrefix.count))
             guard isSnapshotDate(date) else { result.failed = 1; result.output = "Invalid snapshot date."; break }
             let out = Command.run("/usr/bin/tmutil", ["deletelocalsnapshots", date], timeout: 300)
-            result.output = out.output
+            result.output = out.combined
             if out.status != 0 { result.failed = 1 } else { result.removed = 1 }
         default:
             result.failed = 1

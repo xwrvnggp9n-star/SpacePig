@@ -29,6 +29,8 @@ final class FlatTree {
     private(set) var ownSize: [UInt64] = []
     /// Allocated bytes not shared with clones (APFS private size), for files.
     private(set) var ownPrivate: [UInt64] = []
+    /// Allocated bytes in files APFS marks purgeable (macOS may delete them on its own).
+    private(set) var ownPurgeable: [UInt64] = []
     private(set) var flags: [UInt8] = []
     /// Number of files the node stands for (1 for a file, N for an aggregate, 0 for a directory).
     private(set) var fileCount: [UInt32] = []
@@ -36,6 +38,7 @@ final class FlatTree {
     // Derived after `finish()` or decoding.
     private(set) var total: [UInt64] = []
     private(set) var totalPrivate: [UInt64] = []
+    private(set) var totalPurgeable: [UInt64] = []
     private(set) var totalFiles: [UInt64] = []
     private var childStart: [Int32] = []
     private var childList: [Int32] = []
@@ -48,11 +51,12 @@ final class FlatTree {
 
     @discardableResult
     func append(name: String, parent p: Int, size: UInt64, privateSize: UInt64,
-                flags f: NodeFlags, files: UInt32) -> Int {
+                flags f: NodeFlags, files: UInt32, purgeable: UInt64 = 0) -> Int {
         names.append(name)
         parent.append(Int32(p))
         ownSize.append(size)
         ownPrivate.append(privateSize)
+        ownPurgeable.append(purgeable)
         flags.append(f.rawValue)
         fileCount.append(files)
         return names.count - 1
@@ -69,12 +73,14 @@ final class FlatTree {
         let n = count
         total = ownSize
         totalPrivate = ownPrivate
+        totalPurgeable = ownPurgeable
         totalFiles = fileCount.map { UInt64($0) }
         if n > 1 {
             for i in stride(from: n - 1, through: 1, by: -1) {
                 let p = Int(parent[i])
                 total[p] &+= total[i]
                 totalPrivate[p] &+= totalPrivate[i]
+                totalPurgeable[p] &+= totalPurgeable[i]
                 totalFiles[p] &+= totalFiles[i]
             }
         }
@@ -125,7 +131,7 @@ final class FlatTree {
 
     // MARK: - Binary encoding
 
-    private static let magic: UInt32 = 0x53444C32 // "SDL2"
+    private static let magic: UInt32 = 0x53444C33 // "SDL3"
 
     enum DecodeError: Error { case truncated, badMagic, inconsistent }
 
@@ -144,7 +150,7 @@ final class FlatTree {
         blob.reserveCapacity(count * 16)
         for n in names { blob.append(contentsOf: n.utf8); blob.append(0) }
         put(UInt64(blob.count)); d.append(blob)
-        putArray(parent); putArray(ownSize); putArray(ownPrivate); putArray(fileCount)
+        putArray(parent); putArray(ownSize); putArray(ownPrivate); putArray(ownPurgeable); putArray(fileCount)
         d.append(contentsOf: flags)
         return d
     }
@@ -160,7 +166,7 @@ final class FlatTree {
         }
         func getArray<T: FixedWidthInteger>(_: T.Type, _ n: Int) throws -> [T] {
             let size = MemoryLayout<T>.size
-            guard n >= 0, off + n * size <= d.count else { throw DecodeError.truncated }
+            guard n >= 0, off <= d.count, n <= (d.count - off) / size else { throw DecodeError.truncated }
             var out = [T](repeating: 0, count: n)
             out.withUnsafeMutableBytes { dst in
                 d.withUnsafeBytes { src in
@@ -172,13 +178,14 @@ final class FlatTree {
         }
         guard try get(UInt32.self) == magic else { throw DecodeError.badMagic }
         let rootLen = Int(try get(UInt32.self))
-        guard rootLen < 4096, off + rootLen <= d.count else { throw DecodeError.truncated }
+        guard rootLen < 4096, rootLen <= d.count - off else { throw DecodeError.truncated }
         let root = String(decoding: d[d.startIndex + off ..< d.startIndex + off + rootLen], as: UTF8.self)
         off += rootLen
-        let n = Int(try get(UInt64.self))
-        guard n > 0, n < 200_000_000 else { throw DecodeError.inconsistent }
-        let blobLen = Int(try get(UInt64.self))
-        guard off + blobLen <= d.count else { throw DecodeError.truncated }
+        guard let n = Int(exactly: try get(UInt64.self)) else { throw DecodeError.inconsistent }
+        // Every node needs at least 26 bytes (name NUL, 4+8+8+8+4 array bytes, 1 flag byte).
+        guard n > 0, n < 200_000_000, n <= (d.count - off) / 34 else { throw DecodeError.inconsistent }
+        guard let blobLen = Int(exactly: try get(UInt64.self)) else { throw DecodeError.inconsistent }
+        guard blobLen >= 0, blobLen <= d.count - off else { throw DecodeError.truncated }
         var names: [String] = []
         names.reserveCapacity(n)
         d.withUnsafeBytes { raw in
@@ -196,8 +203,9 @@ final class FlatTree {
         tree.parent = try getArray(Int32.self, n)
         tree.ownSize = try getArray(UInt64.self, n)
         tree.ownPrivate = try getArray(UInt64.self, n)
+        tree.ownPurgeable = try getArray(UInt64.self, n)
         tree.fileCount = try getArray(UInt32.self, n)
-        guard off + n <= d.count else { throw DecodeError.truncated }
+        guard n <= d.count - off else { throw DecodeError.truncated }
         tree.flags = [UInt8](d[d.startIndex + off ..< d.startIndex + off + n])
         guard tree.parent[0] == -1 else { throw DecodeError.inconsistent }
         for i in 1..<n where tree.parent[i] < 0 || Int(tree.parent[i]) >= i {

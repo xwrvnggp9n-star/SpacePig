@@ -113,6 +113,34 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(sd[3], 300) // Library minus Messages
     }
 
+    func testInfoOnlyRuleKeepsBroaderCategoryAndPurgeableIsExcluded() throws {
+        let json = """
+        { "rules": [
+          { "path": "/Lib", "category": "systemData", "info": "lib", "safety": "app-data" },
+          { "path": "/Lib/*", "category": "applications", "info": "app", "safety": "app-data" },
+          { "path": "/Lib/whatsapp", "info": "only info", "safety": "user-data" },
+          { "path": "/Lib/whatsapp/msgs", "category": "messages", "info": "m", "safety": "user-data" }
+        ] }
+        """
+        let rules = try RuleSet.decode(Data(json.utf8), homeRelative: "/Users/x")
+        let t = FlatTree(rootPath: "/R")
+        t.append(name: "/R", parent: -1, size: 0, privateSize: 0, flags: .directory, files: 0)
+        let lib = t.append(name: "Lib", parent: 0, size: 0, privateSize: 0, flags: .directory, files: 0)
+        let wa = t.append(name: "whatsapp", parent: lib, size: 0, privateSize: 0, flags: .directory, files: 0)
+        t.append(name: "media", parent: wa, size: 100, privateSize: 100, flags: [], files: 1)
+        t.append(name: "cloud", parent: wa, size: 40, privateSize: 40, flags: .purgeable, files: 1, purgeable: 40)
+        let msgs = t.append(name: "msgs", parent: wa, size: 0, privateSize: 0, flags: .directory, files: 0)
+        t.append(name: "att", parent: msgs, size: 30, privateSize: 30, flags: .purgeable, files: 1, purgeable: 30)
+        t.append(name: "db", parent: msgs, size: 5, privateSize: 5, flags: [], files: 1)
+        t.finish()
+        let idx = CategoryIndex(tree: t, rules: rules)
+        XCTAssertEqual(idx.totals[.applications], 140) // purgeable counts outside Messages
+        XCTAssertEqual(idx.totals[.systemData], 0)
+        XCTAssertEqual(idx.totals[.messages], 5) // Messages' purgeable attachments left out
+        XCTAssertEqual(rules.nearestRule(for: wa, in: t, classification: idx.classification)?.rule.info, "only info")
+        XCTAssertEqual(try FlatTree.decode(t.encoded()).totalPurgeable[0], 70)
+    }
+
     // MARK: SafeDeleter
 
     func testSafeDeleterDoesNotFollowSymlinks() throws {

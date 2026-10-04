@@ -66,9 +66,9 @@ struct InspectorView: View {
                             }
                         }
                         .confirmationDialog("Move “\(item.name)” to the Trash?", isPresented: $confirmTrash) {
-                            Button("Move to Trash", role: .destructive) { trash(p) }
+                            Button("Move to Trash", role: .destructive) { trash(p, expectDirectory: d.isDirectory) }
                         } message: {
-                            Text("\(ByteFormat.string(d.size)) frees up once you empty the Trash.")
+                            Text("This moves the whole item (\(ByteFormat.string(d.fullSize ?? d.size)) at the last scan). The space comes back once you empty the Trash.")
                         }
                     }
                     if let trashError { Text(trashError).foregroundStyle(.red).font(.callout) }
@@ -137,7 +137,13 @@ struct InspectorView: View {
         return FileManager.default.isDeletableFile(atPath: path)
     }
 
-    private func trash(_ path: String) {
+    private func trash(_ path: String, expectDirectory: Bool) {
+        // The scan may be old: refuse if the path is gone or is now a different kind of item.
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue == expectDirectory else {
+            trashError = "This item changed since the scan. Scan again first."
+            return
+        }
         do {
             try FileManager.default.trashItem(at: URL(fileURLWithPath: path), resultingItemURL: nil)
             model.dataIsStale = true

@@ -33,6 +33,7 @@ final class AppModel {
 
     func start() async {
         await helper.refresh()
+        await SelfTest.runIfRequested(helper)
         hasFullDiskAccess = AppModel.checkFullDiskAccess()
         if volumes == nil { volumes = await Task.detached { VolumeReport.load() }.value }
     }
@@ -52,6 +53,7 @@ final class AppModel {
 
     func scanAll() {
         guard !isScanning else { return }
+        isScanning = true // set now so a second click in the same run-loop turn is ignored
         scanTask = Task { await runScan() }
     }
 
@@ -62,6 +64,7 @@ final class AppModel {
     private func runScan() async {
         isScanning = true
         scanError = nil
+        dataIsStale = false
         defer { isScanning = false; scanMessage = "" }
 
         scanMessage = "Reading volumes…"

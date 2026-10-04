@@ -148,7 +148,8 @@ final class RuleSet {
         for i in 1..<n {
             let p = Int(tree.parent[i])
             categoryOf[i] = categoryOf[p]
-            guard let parentStates = states[p] else { continue }
+            // Synthetic "(N smaller files)" nodes inherit their folder's rule, never a glob's.
+            guard let parentStates = states[p], tree.flags[i] & NodeFlags.aggregate.rawValue == 0 else { continue }
             let name = tree.names[i]
             var next: [Int] = []
             for s in parentStates {
@@ -157,9 +158,13 @@ final class RuleSet {
             }
             guard !next.isEmpty else { continue }
             states[i] = next
-            if let best = next.compactMap({ trie[$0].rule }).max() {
-                ruleOf[i] = Int32(best)
-                if let c = rules[best].category { categoryOf[i] = c.index }
+            // The latest matching rule supplies the description; the latest matching rule
+            // that names a category decides the category, so an info-only rule never
+            // cancels a category set by a broader pattern on the same folder.
+            let matched = next.compactMap { trie[$0].rule }
+            if let best = matched.max() { ruleOf[i] = Int32(best) }
+            if let cat = matched.filter({ rules[$0].category != nil }).max(), let c = rules[cat].category {
+                categoryOf[i] = c.index
             }
         }
         return Classification(categoryOf: categoryOf, ruleOf: ruleOf)
@@ -192,19 +197,31 @@ final class CategoryIndex {
         self.classification = rules.classify(tree)
         var t = [UInt64](repeating: 0, count: StorageCategory.allCases.count)
         for i in 0..<tree.count {
-            t[Int(classification.categoryOf[i])] &+= tree.ownSize[i]
+            let c = classification.categoryOf[i]
+            t[Int(c)] &+= CategoryIndex.counted(tree, i, c)
         }
         for c in StorageCategory.allCases { totals[c] = t[Int(c.index)] }
+    }
+
+    /// Categories whose purgeable files System Settings leaves out. Measured against
+    /// Settings on macOS 27: Messages attachments kept in iCloud are excluded there, while
+    /// purgeable files elsewhere (cloud-storage folders, podcast episodes) still count.
+    static let purgeableExcluded: Set<UInt8> = [StorageCategory.messages.index]
+
+    static func counted(_ tree: FlatTree, _ i: Int, _ category: UInt8) -> UInt64 {
+        purgeableExcluded.contains(category) ? tree.ownSize[i] &- tree.ownPurgeable[i] : tree.ownSize[i]
     }
 
     /// Subtree sizes counting only bytes assigned to `category`.
     func sizes(for category: StorageCategory) -> [UInt64] {
         lock.lock(); defer { lock.unlock() }
         if let cached = filtered[category.index] { return cached }
+        // Keep one category's array at a time; each is 8 bytes per node.
+        filtered.removeAll()
         let n = tree.count
         var s = [UInt64](repeating: 0, count: n)
         let c = category.index
-        for i in 0..<n where classification.categoryOf[i] == c { s[i] = tree.ownSize[i] }
+        for i in 0..<n where classification.categoryOf[i] == c { s[i] = CategoryIndex.counted(tree, i, c) }
         if n > 1 {
             for i in stride(from: n - 1, through: 1, by: -1) {
                 s[Int(tree.parent[i])] &+= s[i]

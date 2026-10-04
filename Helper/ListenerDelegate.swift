@@ -83,12 +83,44 @@ final class IdleMonitor {
     func connectionOpened() { queue.sync { connections += 1; lastActivity = Date() } }
     func connectionClosed() { queue.sync { connections -= 1; lastActivity = Date() } }
     func beginWork() { queue.sync { busy += 1; lastActivity = Date() } }
-    func endWork() { queue.sync { busy -= 1; lastActivity = Date() } }
+    func endWork() {
+        queue.sync { busy -= 1; lastActivity = Date() }
+        queue.async { [weak self] in self?.check() }
+    }
+    var isBusy: Bool { queue.sync { busy > 0 } }
+    /// Set when the helper's executable was replaced; exit as soon as no work is in flight.
+    private var exitWhenIdle = false
+    func requestExitWhenIdle() {
+        queue.sync { exitWhenIdle = true }
+        queue.async { [weak self] in self?.check() }
+    }
 
     private func check() {
+        if exitWhenIdle && busy <= 0 {
+            helperLog.info("executable replaced; exiting so launchd starts the new one")
+            exit(0)
+        }
         if connections <= 0 && busy <= 0 && Date().timeIntervalSince(lastActivity) > 120 {
             helperLog.info("idle; exiting")
             exit(0)
         }
+    }
+}
+
+/// Exits the helper once its executable is deleted or replaced (an app update). Otherwise
+/// the old process keeps running with a signature the new app rightly refuses.
+enum BinaryWatcher {
+    private static var source: DispatchSourceFileSystemObject?
+
+    static func start() {
+        guard let path = Bundle.main.executablePath else { return }
+        let fd = open(path, O_EVTONLY)
+        guard fd >= 0 else { return }
+        let s = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.delete, .rename, .write, .revoke],
+                                                          queue: .global())
+        s.setEventHandler { IdleMonitor.shared.requestExitWhenIdle() }
+        s.setCancelHandler { close(fd) }
+        s.resume()
+        source = s
     }
 }

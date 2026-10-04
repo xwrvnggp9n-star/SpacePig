@@ -22,8 +22,9 @@ enum HelperConstants {
         "anchor apple generic and identifier \"\(helperIdentifier)\" " +
         "and certificate leaf[subject.OU] = \"\(teamID)\" and \(developerIDLeaf)"
 
-    /// Authorization right the app must obtain (admin password or Touch ID) before root cleanup.
-    static let cleanupRight = "system.privilege.admin"
+    /// Authorization right the app must obtain (admin password or Touch ID) before root
+    /// cleanup. The helper registers it with `allow-root` off and no credential sharing.
+    static let cleanupRight = "app.sklar.SystemDataLens.cleanup"
 
     /// The only directories the helper will scan.
     static let allowedScanRoots = ["/System/Volumes/Data", "/System/Volumes/Preboot"]
