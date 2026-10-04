@@ -56,6 +56,9 @@ protocol HelperProtocol {
     /// JSON-encoded `[CleanupTarget]` for root-owned targets.
     func rootCleanupTargets(reply: @escaping (Data) -> Void)
 
+    /// JSON `[SafeDeleter.Item]`: what a root target would remove, for the Details sheet.
+    func rootTargetItems(targetID: String, olderThanDays: Int, reply: @escaping (Data) -> Void)
+
     /// `request` is JSON `CleanupRequest`; `authorization` is an `AuthorizationExternalForm`.
     /// Replies with JSON `CleanupReport`.
     func runRootCleanup(request: Data, authorization: Data, reply: @escaping (Data) -> Void)

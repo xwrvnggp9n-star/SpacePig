@@ -17,7 +17,7 @@ enum RootTargets {
             title: "System-wide caches (/Library/Caches)",
             detail: "Caches shared by all users. Apps and macOS rebuild them as needed.",
             executor: .root, defaultSelected: true, irreversible: true,
-            estimatedBytes: caches.bytes, preview: caches.preview, command: nil))
+            estimatedBytes: caches.bytes, preview: caches.preview, command: nil, supportsAge: true))
 
         let logBytes = SafeDeleter.measureContents(of: "/private/var/db/diagnostics").bytes
             &+ SafeDeleter.measureContents(of: "/private/var/db/uuidtext").bytes
@@ -48,11 +48,24 @@ enum RootTargets {
         return false
     }
 
-    static func run(id: String) -> CleanupTargetResult {
+    /// What a target would remove, for the app's Details sheet.
+    static func items(id: String, olderThanDays days: Int) -> [SafeDeleter.Item] {
+        switch id {
+        case libraryCachesID:
+            return SafeDeleter.items(of: "/Library/Caches", scope: .init(olderThan: CleanupAge.cutoff(days: days)))
+        case unifiedLogsID:
+            return (SafeDeleter.items(of: "/private/var/db/diagnostics")
+                + SafeDeleter.items(of: "/private/var/db/uuidtext")).sorted { $0.bytes > $1.bytes }
+        default:
+            return []
+        }
+    }
+
+    static func run(id: String, olderThanDays days: Int = 0) -> CleanupTargetResult {
         var result = CleanupTargetResult(targetID: id, freedBytes: 0, removed: 0, failed: 0, failures: [], output: nil)
         switch id {
         case libraryCachesID:
-            let r = SafeDeleter.removeContents(of: "/Library/Caches")
+            let r = SafeDeleter.removeContents(of: "/Library/Caches", scope: .init(olderThan: CleanupAge.cutoff(days: days)))
             result.removed = r.removed
             result.freedBytes = r.freedBytes
             result.failed = r.failures.count

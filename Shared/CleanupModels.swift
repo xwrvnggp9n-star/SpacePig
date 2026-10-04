@@ -25,10 +25,22 @@ struct CleanupTarget: Codable, Identifiable, Hashable {
     var preview: [String]
     /// The command line this target runs, if any, shown to the user before running.
     var command: String?
+    /// True when the target can be limited to files not modified in N days.
+    var supportsAge: Bool = false
+}
+
+/// Age choices offered for targets that support them. 0 means any age.
+enum CleanupAge {
+    static let choices = [0, 30, 60, 90]
+    static func cutoff(days: Int) -> Date? {
+        days > 0 ? Date().addingTimeInterval(-Double(days) * 86_400) : nil
+    }
 }
 
 struct CleanupRequest: Codable {
     var targetIDs: [String]
+    /// Per-target age filter in days; missing or 0 means any age.
+    var olderThanDays: [String: Int]?
 }
 
 struct CleanupItemResult: Codable, Hashable {

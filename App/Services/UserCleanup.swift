@@ -41,6 +41,27 @@ enum UserCleanup {
         var path: String
         var only: Set<String>? = nil
         var keep: (String) -> Bool = { _ in false }
+
+        func scope(days: Int) -> SafeDeleter.Scope {
+            SafeDeleter.Scope(onlyTopLevel: only, keepTopLevel: keep, olderThan: CleanupAge.cutoff(days: days))
+        }
+    }
+
+    /// Targets where "only files not modified in N days" makes sense.
+    static let ageCapable: Set<String> = ["user.caches", "user.apple-caches", "user.dot-cache", "user.temp-cache",
+                                          "user.logs", "user.deriveddata", "user.devicesupport", "user.coresim-caches"]
+
+    /// Bytes a directory target would free with the given age filter. nil for command targets.
+    static func measure(id: String, olderThanDays days: Int) -> UInt64? {
+        let specs = dirSpecs(for: id)
+        guard !specs.isEmpty else { return nil }
+        return specs.reduce(0) { $0 &+ SafeDeleter.measureContents(of: $1.path, scope: $1.scope(days: days)).bytes }
+    }
+
+    /// Every top-level item a directory target would remove, largest first.
+    static func items(id: String, olderThanDays days: Int) -> [SafeDeleter.Item] {
+        dirSpecs(for: id).flatMap { SafeDeleter.items(of: $0.path, scope: $0.scope(days: days)) }
+            .sorted { $0.bytes > $1.bytes }
     }
 
     private static let homebrewCacheName = "Homebrew"
@@ -138,14 +159,15 @@ enum UserCleanup {
             var bytes: UInt64 = 0
             var preview: [String] = []
             for s in specs {
-                let m = SafeDeleter.measureContents(of: s.path, onlyTopLevel: s.only, keepTopLevel: s.keep)
+                let m = SafeDeleter.measureContents(of: s.path, scope: s.scope(days: 0))
                 bytes &+= m.bytes
                 preview += m.preview
             }
             guard bytes > 0 else { return }
             out.append(CleanupTarget(id: id, group: group, title: title, detail: detail, executor: .user,
                                      defaultSelected: on, irreversible: true, estimatedBytes: bytes,
-                                     preview: Array(preview.prefix(40)), command: nil))
+                                     preview: Array(preview.prefix(40)), command: nil,
+                                     supportsAge: ageCapable.contains(id)))
         }
 
         dirTarget("user.caches", group: "Caches", title: "App caches (~/Library/Caches)",
@@ -258,7 +280,7 @@ enum UserCleanup {
 
     // MARK: - Running
 
-    static func run(id: String) -> CleanupTargetResult {
+    static func run(id: String, olderThanDays days: Int = 0) -> CleanupTargetResult {
         var result = CleanupTargetResult(targetID: id, freedBytes: 0, removed: 0, failed: 0, failures: [], output: nil)
         if let cmd = commandSpec(for: id) {
             let out = Command.run(cmd.path, cmd.args, environment: toolEnvironment, timeout: cmd.timeout)
@@ -273,7 +295,7 @@ enum UserCleanup {
             return result
         }
         for s in specs {
-            let r = SafeDeleter.removeContents(of: s.path, onlyTopLevel: s.only, keepTopLevel: s.keep, requiredOwner: getuid())
+            let r = SafeDeleter.removeContents(of: s.path, scope: s.scope(days: days), requiredOwner: getuid())
             result.removed += r.removed
             result.freedBytes &+= r.freedBytes
             result.failed += r.failures.count

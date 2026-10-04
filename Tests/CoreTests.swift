@@ -177,6 +177,31 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(fm.fileExists(atPath: real.appendingPathComponent("precious.txt").path))
     }
 
+    func testSafeDeleterAgeFilter() throws {
+        let fm = FileManager.default
+        let base = realTemp().appendingPathComponent("sdl-age-\(UUID().uuidString)")
+        let mixed = base.appendingPathComponent("mixed"), stale = base.appendingPathComponent("stale")
+        try fm.createDirectory(at: mixed, withIntermediateDirectories: true)
+        try fm.createDirectory(at: stale, withIntermediateDirectories: true)
+        let old = Date().addingTimeInterval(-90 * 86_400)
+        for (dir, name, date) in [(mixed, "old.log", old), (mixed, "new.log", Date()), (stale, "a.log", old)] {
+            let url = dir.appendingPathComponent(name)
+            try Data(repeating: 1, count: 10_000).write(to: url)
+            try fm.setAttributes([.modificationDate: date], ofItemAtPath: url.path)
+        }
+        defer { try? fm.removeItem(at: base) }
+
+        let scope = SafeDeleter.Scope(olderThan: CleanupAge.cutoff(days: 30))
+        let items = SafeDeleter.items(of: base.path, scope: scope)
+        XCTAssertEqual(items.map(\.files).reduce(0, +), 2)
+        XCTAssertEqual(Set(items.map { URL(fileURLWithPath: $0.path).lastPathComponent }), ["mixed", "stale"])
+
+        let r = SafeDeleter.removeContents(of: base.path, scope: scope)
+        XCTAssertTrue(r.failures.isEmpty, "\(r.failures)")
+        XCTAssertEqual(try fm.contentsOfDirectory(atPath: base.path), ["mixed"]) // stale emptied and removed
+        XCTAssertEqual(try fm.contentsOfDirectory(atPath: mixed.path), ["new.log"])
+    }
+
     func testSafeDeleterKeepAndOnly() throws {
         let fm = FileManager.default
         let base = realTemp().appendingPathComponent("sdl-test-\(UUID().uuidString)")

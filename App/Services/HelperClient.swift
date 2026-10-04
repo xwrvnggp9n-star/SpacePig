@@ -230,9 +230,18 @@ final class HelperClient {
         try await Task.detached { try AdminAuthorization() }.value
     }
 
-    func runRootCleanup(ids: [String], auth: AdminAuthorization) async throws -> CleanupReport {
+    func rootTargetItems(id: String, olderThanDays days: Int) async throws -> [SafeDeleter.Item] {
         guard isReady else { throw HelperError.notReady }
-        let request = try JSONEncoder().encode(CleanupRequest(targetIDs: ids))
+        let data: Data = try await call { proxy, done in
+            proxy.rootTargetItems(targetID: id, olderThanDays: days) { done(.success($0)) }
+        }
+        guard let items = try? JSONDecoder().decode([SafeDeleter.Item].self, from: data) else { throw HelperError.badReply }
+        return items
+    }
+
+    func runRootCleanup(ids: [String], ages: [String: Int] = [:], auth: AdminAuthorization) async throws -> CleanupReport {
+        guard isReady else { throw HelperError.notReady }
+        let request = try JSONEncoder().encode(CleanupRequest(targetIDs: ids, olderThanDays: ages))
         let form = auth.externalForm
         let data: Data = try await call { proxy, done in
             proxy.runRootCleanup(request: request, authorization: form) { done(.success($0)) }

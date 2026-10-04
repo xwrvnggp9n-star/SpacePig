@@ -160,6 +160,16 @@ final class HelperSession: NSObject, HelperProtocol {
         reply((try? JSONEncoder().encode(targets)) ?? Data())
     }
 
+    func rootTargetItems(targetID: String, olderThanDays: Int, reply: @escaping (Data) -> Void) {
+        guard RootTargets.isValidID(targetID), CleanupAge.choices.contains(olderThanDays) else {
+            reply(Data("[]".utf8)); return
+        }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let items = RootTargets.items(id: targetID, olderThanDays: olderThanDays)
+            reply((try? JSONEncoder().encode(items)) ?? Data("[]".utf8))
+        }
+    }
+
     func runRootCleanup(request: Data, authorization: Data, reply: @escaping (Data) -> Void) {
         func fail(_ message: String) {
             let report = CleanupReport(results: [], error: message)
@@ -172,6 +182,9 @@ final class HelperSession: NSObject, HelperProtocol {
         }
         var seen = Set<String>()
         let ids = decoded.targetIDs.filter { seen.insert($0).inserted }
+        // Only the offered age choices are accepted; anything else means "any age" is not assumed.
+        let ages = decoded.olderThanDays ?? [:]
+        guard ages.values.allSatisfy({ CleanupAge.choices.contains($0) }) else { return fail("Bad age filter.") }
         guard AuthorizationCheck.verify(externalForm: authorization, right: HelperConstants.cleanupRight) else {
             helperLog.error("pid \(self.pid) cleanup refused: authorization failed")
             return fail("Administrator authorization was not granted.")
@@ -187,7 +200,7 @@ final class HelperSession: NSObject, HelperProtocol {
                 IdleMonitor.shared.endWork()
             }
             helperLog.notice("pid \(self.pid) uid \(self.uid) running cleanup: \(ids.joined(separator: ","), privacy: .public)")
-            let results = ids.map { RootTargets.run(id: $0) }
+            let results = ids.map { RootTargets.run(id: $0, olderThanDays: ages[$0] ?? 0) }
             let report = CleanupReport(results: results, error: nil)
             reply((try? JSONEncoder().encode(report)) ?? Data())
         }
