@@ -17,6 +17,12 @@ struct SpacePigApp: App {
                     .keyboardShortcut("r")
                     .disabled(model.isScanning)
             }
+            CommandGroup(replacing: .help) {
+                Link("SpacePig Website", destination: Links.website)
+                Link("SpacePig on GitHub", destination: Links.github)
+                Divider()
+                Link("Buy Me a Coffee", destination: Links.coffee)
+            }
         }
     }
 }
@@ -94,4 +100,10 @@ struct ContentView: View {
         let all = StorageCategory.allCases.filter { always.contains($0) || model.total(for: $0) > 0 }
         return all.sorted { model.total(for: $0) > model.total(for: $1) }
     }
+}
+
+enum Links {
+    static let website = URL(string: "https://sklar.app/spacepig/")!
+    static let github = URL(string: "https://github.com/xwrvnggp9n-star/SpacePig")!
+    static let coffee = URL(string: "https://buymeacoffee.com/sandysklar")!
 }

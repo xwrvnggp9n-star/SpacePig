@@ -55,3 +55,7 @@ Self-test of the helper's password check: `open -a SpacePig --args --selftest-au
 ## Status
 
 Releases are signed with Developer ID and notarized by Apple.
+
+Website: https://sklar.app/spacepig/
+
+SpacePig is free and MIT-licensed. If it found you some space, [buy me a coffee](https://buymeacoffee.com/sandysklar).

@@ -38,6 +38,14 @@ struct OverviewView: View {
                 if model.index != nil { categoryTable }
                 if let v = model.volumes { volumeTable(v) }
                 if model.index != nil { notes }
+                HStack(spacing: 4) {
+                    Text("SpacePig is free and open source. If it found you some space,")
+                    Link("buy me a coffee", destination: Links.coffee)
+                    Text("☕")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
             }
             .padding(20)
             .frame(maxWidth: 900, alignment: .leading)
