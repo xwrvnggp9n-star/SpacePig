@@ -56,6 +56,8 @@ struct CleanupTargetResult: Codable, Hashable {
     var failed: Int
     var failures: [CleanupItemResult]
     var output: String?
+    /// Items left in place on purpose (owned by another account).
+    var skipped: Int = 0
 }
 
 struct CleanupReport: Codable {

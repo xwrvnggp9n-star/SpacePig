@@ -413,11 +413,19 @@ struct ReportSheet: View {
                         if r.freedBytes > 0 { Text(ByteFormat.string(r.freedBytes)).monospacedDigit() }
                     }
                     if r.failed > 0 { Text("\(r.failed) item(s) could not be removed.").font(.caption).foregroundStyle(.orange) }
+                    if r.skipped > 0 {
+                        Text("\(r.skipped) item(s) owned by another account were left in place, as intended.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     ForEach(r.failures.prefix(5), id: \.self) { f in
                         Text("\(f.path): \(f.message ?? "")").font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1)
                     }
                     if let o = r.output, !o.isEmpty {
-                        Text(o.suffix(600)).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(8)
+                        // Last few whole lines, so long tool output never starts mid-line.
+                        let lines = o.split(separator: "\n", omittingEmptySubsequences: true)
+                        Text(lines.suffix(6).joined(separator: "\n"))
+                            .font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(6)
+                            .textSelection(.enabled)
                     }
                 }
             }

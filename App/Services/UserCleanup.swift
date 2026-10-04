@@ -43,7 +43,8 @@ enum UserCleanup {
         var keep: (String) -> Bool = { _ in false }
 
         func scope(days: Int) -> SafeDeleter.Scope {
-            SafeDeleter.Scope(onlyTopLevel: only, keepTopLevel: keep, olderThan: CleanupAge.cutoff(days: days))
+            SafeDeleter.Scope(onlyTopLevel: only, keepTopLevel: keep, olderThan: CleanupAge.cutoff(days: days),
+                              owner: getuid())
         }
     }
 
@@ -295,8 +296,9 @@ enum UserCleanup {
             return result
         }
         for s in specs {
-            let r = SafeDeleter.removeContents(of: s.path, scope: s.scope(days: days), requiredOwner: getuid())
+            let r = SafeDeleter.removeContents(of: s.path, scope: s.scope(days: days))
             result.removed += r.removed
+            result.skipped += r.skipped.count
             result.freedBytes &+= r.freedBytes
             result.failed += r.failures.count
             result.failures += r.failures.prefix(50).map { CleanupItemResult(path: $0.path, ok: false, message: $0.reason) }

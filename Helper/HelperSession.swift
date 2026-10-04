@@ -236,9 +236,10 @@ enum AuthorizationCheck {
             var item = AuthorizationItem(name: name, valueLength: 0, value: nil, flags: 0)
             return withUnsafeMutablePointer(to: &item) { itemPtr -> Bool in
                 var rights = AuthorizationRights(count: 1, items: itemPtr)
-                // No .extendRights: succeed only if the app already obtained this right in
-                // that authorization, so being root here never satisfies the check by itself.
-                let status = AuthorizationCopyRights(authRef, &rights, nil, [], nil)
+                // Extend without interaction: succeeds only with the admin credential the app
+                // collected into this authorization. The right has allow-root off, so being
+                // root here never satisfies it on its own (checked by --selftest-auth).
+                let status = AuthorizationCopyRights(authRef, &rights, nil, [.extendRights], nil)
                 return status == errAuthorizationSuccess
             }
         }
@@ -246,11 +247,20 @@ enum AuthorizationCheck {
 }
 
 enum AuthorizationRight {
-    /// Registers the cleanup right in the authorization database if it is missing: admin
-    /// password every time (timeout 0), never shared, and root alone does not satisfy it.
+    /// Registers (or updates) the cleanup right: an admin password, never shared with the
+    /// login session, and root alone does not satisfy it. The credential stays valid for
+    /// five minutes inside the one authorization the app creates for a cleanup, long
+    /// enough for the helper to verify it. (Version 1 used timeout 0, which let the app's
+    /// prompt use up the credential before the helper could check it.)
+    static let ruleVersion = 2
+
     static func ensureRegistered() {
         let name = HelperConstants.cleanupRight
-        if AuthorizationRightGet(name, nil) == errAuthorizationSuccess { return }
+        var existing: CFDictionary?
+        if AuthorizationRightGet(name, &existing) == errAuthorizationSuccess,
+           let dict = existing as? [String: Any], (dict["version"] as? Int) == ruleVersion {
+            return
+        }
         var authRef: AuthorizationRef?
         guard AuthorizationCreate(nil, nil, [], &authRef) == errAuthorizationSuccess, let authRef else { return }
         defer { AuthorizationFree(authRef, []) }
@@ -259,10 +269,10 @@ enum AuthorizationRight {
             "group": "admin",
             "shared": false,
             "allow-root": false,
-            "timeout": 0,
+            "timeout": 300,
             "authenticate-user": true,
             "session-owner": false,
-            "version": 1,
+            "version": ruleVersion,
             "comment": "Used by SpacePig before its helper removes system-wide files.",
         ]
         let status = AuthorizationRightSet(authRef, name, rule as CFDictionary,

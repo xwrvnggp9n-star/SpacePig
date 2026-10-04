@@ -23,6 +23,8 @@ enum SafeDeleter {
         var removed = 0
         var freedBytes: UInt64 = 0
         var failures: [Failure] = []
+        /// Left in place on purpose (owned by another account).
+        var skipped: [Failure] = []
     }
 
     /// Which top-level entries of a directory a target covers.
@@ -31,6 +33,8 @@ enum SafeDeleter {
         var keepTopLevel: (String) -> Bool = { _ in false }
         /// Only files modified before this date count. nil means every file.
         var olderThan: Date? = nil
+        /// When set, entries owned by any other account are left alone and not counted.
+        var owner: uid_t? = nil
 
         func includes(_ name: String) -> Bool {
             if let only = onlyTopLevel, !only.contains(name) { return false }
@@ -46,6 +50,7 @@ enum SafeDeleter {
     /// Removes the covered entries inside `directory`, never `directory` itself.
     /// - Parameter requiredOwner: when set, any entry owned by another user is left in place.
     static func removeContents(of directory: String, scope: Scope, requiredOwner: uid_t? = nil) -> Result {
+        let requiredOwner = requiredOwner ?? scope.owner
         var result = Result()
         let dfd = open(directory, O_RDONLY | O_DIRECTORY | O_NOFOLLOW_ANY | O_CLOEXEC)
         guard dfd >= 0 else {
@@ -108,7 +113,7 @@ enum SafeDeleter {
             var acc = Tally()
             var est = stat()
             guard fstatat(dfd, name, &est, AT_SYMLINK_NOFOLLOW) == 0 else { continue }
-            measure(parentFD: dfd, name: name, device: st.st_dev, cutoff: cutoff, depth: 0, into: &acc)
+            measure(parentFD: dfd, name: name, device: st.st_dev, cutoff: cutoff, owner: scope.owner, depth: 0, into: &acc)
             guard acc.files > 0 else { continue }
             out.append(Item(path: directory + "/" + name, bytes: acc.bytes,
                             newestModified: acc.newest > 0 ? Date(timeIntervalSince1970: TimeInterval(acc.newest)) : nil,
@@ -155,7 +160,7 @@ enum SafeDeleter {
             return
         }
         if let owner, st.st_uid != owner {
-            result.failures.append(Failure(path: displayPath, reason: "owned by another user; skipped"))
+            result.skipped.append(Failure(path: displayPath, reason: "owned by another account"))
             return
         }
         if (st.st_mode & S_IFMT) == S_IFDIR {
@@ -199,10 +204,12 @@ enum SafeDeleter {
         }
     }
 
-    private static func measure(parentFD: Int32, name: String, device: dev_t, cutoff: time_t?, depth: Int,
+    private static func measure(parentFD: Int32, name: String, device: dev_t, cutoff: time_t?, owner: uid_t?, depth: Int,
                                 into acc: inout Tally) {
         var st = stat()
         guard fstatat(parentFD, name, &st, AT_SYMLINK_NOFOLLOW) == 0, st.st_dev == device else { return }
+        // Matches removeEntry: anything owned by another account stays, so it isn't counted.
+        if let owner, st.st_uid != owner { return }
         if (st.st_mode & S_IFMT) != S_IFDIR {
             guard isOldEnough(st, cutoff: cutoff) else { return }
             acc.files += 1
@@ -215,7 +222,7 @@ enum SafeDeleter {
         guard cfd >= 0 else { return }
         defer { close(cfd) }
         for child in listNames(cfd) ?? [] {
-            measure(parentFD: cfd, name: child, device: device, cutoff: cutoff, depth: depth + 1, into: &acc)
+            measure(parentFD: cfd, name: child, device: device, cutoff: cutoff, owner: owner, depth: depth + 1, into: &acc)
         }
     }
 
