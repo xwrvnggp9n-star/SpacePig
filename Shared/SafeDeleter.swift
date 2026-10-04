@@ -148,11 +148,29 @@ enum SafeDeleter {
         return st.st_mtimespec.tv_sec < cutoff
     }
 
+    /// EPERM means macOS itself protects the item (System Integrity Protection, a data
+    /// vault, an immutable flag); even root can't remove it. Report it as left in place.
+    private static func record(_ err: Int32, _ path: String, into result: inout Result) {
+        if err == EPERM {
+            result.skipped.append(Failure(path: path, reason: "protected by macOS"))
+        } else {
+            result.failures.append(Failure(path: path, reason: String(cString: strerror(err))))
+        }
+    }
+
+    /// Flags that make an item undeletable: SF_RESTRICTED (SIP), UF_DATAVAULT, SF_NOUNLINK,
+    /// and the user/system immutable and append-only flags.
+    private static let protectedFlags: UInt32 = 0x0008_0000 | 0x0000_0080 | 0x0010_0000 | 0x2 | 0x4 | 0x2_0000 | 0x4_0000
+
     private static func removeEntry(parentFD: Int32, name: String, device: dev_t, owner: uid_t?, cutoff: time_t?,
                                     displayPath: String, depth: Int, result: inout Result) {
         var st = stat()
         guard fstatat(parentFD, name, &st, AT_SYMLINK_NOFOLLOW) == 0 else {
-            result.failures.append(Failure(path: displayPath, reason: String(cString: strerror(errno))))
+            record(errno, displayPath, into: &result)
+            return
+        }
+        if st.st_flags & protectedFlags != 0 {
+            result.skipped.append(Failure(path: displayPath, reason: "protected by macOS"))
             return
         }
         guard st.st_dev == device else {
@@ -170,7 +188,7 @@ enum SafeDeleter {
             }
             let cfd = openat(parentFD, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
             guard cfd >= 0 else {
-                result.failures.append(Failure(path: displayPath, reason: String(cString: strerror(errno))))
+                record(errno, displayPath, into: &result)
                 return
             }
             var cst = stat()
@@ -190,7 +208,7 @@ enum SafeDeleter {
             if unlinkat(parentFD, name, AT_REMOVEDIR) == 0 {
                 result.removed += 1
             } else if errno != ENOTEMPTY {
-                result.failures.append(Failure(path: displayPath, reason: String(cString: strerror(errno))))
+                record(errno, displayPath, into: &result)
             }
         } else {
             guard isOldEnough(st, cutoff: cutoff) else { return }
@@ -199,7 +217,7 @@ enum SafeDeleter {
                 result.removed += 1
                 result.freedBytes &+= bytes
             } else {
-                result.failures.append(Failure(path: displayPath, reason: String(cString: strerror(errno))))
+                record(errno, displayPath, into: &result)
             }
         }
     }
@@ -208,8 +226,10 @@ enum SafeDeleter {
                                 into acc: inout Tally) {
         var st = stat()
         guard fstatat(parentFD, name, &st, AT_SYMLINK_NOFOLLOW) == 0, st.st_dev == device else { return }
-        // Matches removeEntry: anything owned by another account stays, so it isn't counted.
+        // Matches removeEntry: anything owned by another account or protected by macOS stays,
+        // so it isn't counted.
         if let owner, st.st_uid != owner { return }
+        if st.st_flags & protectedFlags != 0 { return }
         if (st.st_mode & S_IFMT) != S_IFDIR {
             guard isOldEnough(st, cutoff: cutoff) else { return }
             acc.files += 1

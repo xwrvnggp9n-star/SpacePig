@@ -414,7 +414,7 @@ struct ReportSheet: View {
                     }
                     if r.failed > 0 { Text("\(r.failed) item(s) could not be removed.").font(.caption).foregroundStyle(.orange) }
                     if r.skipped > 0 {
-                        Text("\(r.skipped) item(s) owned by another account were left in place, as intended.")
+                        Text("\(r.skipped) item(s) protected by macOS or owned by another account were left in place, as intended.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     ForEach(r.failures.prefix(5), id: \.self) { f in

@@ -69,6 +69,7 @@ enum RootTargets {
             result.removed = r.removed
             result.freedBytes = r.freedBytes
             result.failed = r.failures.count
+            result.skipped = r.skipped.count
             result.failures = r.failures.prefix(50).map { CleanupItemResult(path: $0.path, ok: false, message: $0.reason) }
         case unifiedLogsID:
             let out = Command.run("/usr/bin/log", ["erase", "--all"], timeout: 120)
