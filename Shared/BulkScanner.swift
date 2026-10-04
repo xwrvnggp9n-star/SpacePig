@@ -18,11 +18,27 @@ final class BulkScanner {
 
     let rootPath: String
     let aggregateBelow: UInt64
+    /// Absolute directory paths to list but not descend (marked `.otherDevice`).
+    let excludedPaths: Set<String>
     private let state = OSAllocatedUnfairLock(initialState: Progress())
 
-    init(rootPath: String, aggregateBelow: UInt64 = 1 << 20) {
+    init(rootPath: String, aggregateBelow: UInt64 = 1 << 20, excludedPaths: Set<String>? = nil) {
         self.rootPath = rootPath
         self.aggregateBelow = aggregateBelow
+        self.excludedPaths = excludedPaths ?? (rootPath == "/" ? BulkScanner.systemVolumeExclusions() : [])
+    }
+
+    /// Firmlinks make Data-volume folders appear inside the sealed system volume with the
+    /// same device number, so a scan of "/" must skip them by path, along with the
+    /// other mounted volumes under /System/Volumes.
+    static func systemVolumeExclusions() -> Set<String> {
+        var paths: Set<String> = ["/System/Volumes", "/Volumes", "/dev", "/net", "/home"]
+        if let text = try? String(contentsOfFile: "/usr/share/firmlinks", encoding: .utf8) {
+            for line in text.split(separator: "\n") {
+                if let first = line.split(separator: "\t").first, first.hasPrefix("/") { paths.insert(String(first)) }
+            }
+        }
+        return paths
     }
 
     var progress: Progress { state.withLock { $0 } }
@@ -133,12 +149,14 @@ final class BulkScanner {
 
                     if entry.isDir {
                         var f: NodeFlags = .directory
+                        let childPath = dirPath == "/" ? "/" + entry.name : dirPath + "/" + entry.name
                         let crossesDevice = entry.dev != rootDev || (entry.mountStatus & A.mntStatusMountPoint) != 0
+                            || excludedPaths.contains(childPath)
                         if crossesDevice { f.insert(.otherDevice) }
                         if entry.stFlags & A.sfDataless != 0 { f.insert(.dataless) }
                         let child = tree.append(name: entry.name, parent: dirIndex, size: 0, privateSize: 0, flags: f, files: 0)
                         if !crossesDevice && !f.contains(.dataless) {
-                            stack.append((child, dirPath == "/" ? "/" + entry.name : dirPath + "/" + entry.name))
+                            stack.append((child, childPath))
                         }
                         continue
                     }

@@ -9,8 +9,10 @@ NOTARY_PROFILE=${NOTARY_PROFILE:-dymo-notary}
 
 xcodegen generate --quiet
 rm -rf build
+# A unique build number per build lets the app detect a stale helper still running.
+BUILD_NUMBER=${BUILD_NUMBER:-$(date +%Y%m%d%H%M)}
 xcodebuild -project SystemDataLens.xcodeproj -scheme SystemDataLens -configuration Release \
-  -derivedDataPath build/dd -quiet build
+  -derivedDataPath build/dd -quiet CURRENT_PROJECT_VERSION="$BUILD_NUMBER" build
 APP=build/dd/Build/Products/Release/SystemDataLens.app
 
 echo "==> verifying signatures"

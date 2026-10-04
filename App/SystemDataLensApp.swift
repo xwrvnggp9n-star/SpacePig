@@ -90,8 +90,8 @@ struct ContentView: View {
 
     private var sidebarCategories: [StorageCategory] {
         let always: Set<StorageCategory> = [.macOS, .systemData]
-        let all = StorageCategory.allCases.filter { always.contains($0) || model.total(for: $0) > 0 || model.index == nil }
-        guard model.index != nil else { return all }
+        guard model.index != nil else { return Array(always).sorted { $0.index < $1.index } }
+        let all = StorageCategory.allCases.filter { always.contains($0) || model.total(for: $0) > 0 }
         return all.sorted { model.total(for: $0) > model.total(for: $1) }
     }
 }

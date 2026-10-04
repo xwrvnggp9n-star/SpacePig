@@ -71,7 +71,14 @@ final class HelperClient {
             }
         }
         await refresh()
-        if state == .needsApproval { SMAppService.openSystemSettingsLoginItems() }
+        if state == .needsApproval {
+            SMAppService.openSystemSettingsLoginItems()
+            // Watch for the user flipping the switch, for up to three minutes.
+            for _ in 0..<90 where state == .needsApproval {
+                try? await Task.sleep(for: .seconds(2))
+                await refresh()
+            }
+        }
     }
 
     func openApprovalSettings() {
