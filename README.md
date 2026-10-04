@@ -52,4 +52,4 @@ Self-test of the helper's password check: `open -a SystemDataLens --args --selft
 
 ## Status
 
-Releases are signed but not yet notarized, so the first launch needs right-click > Open.
+Releases are signed with Developer ID and notarized by Apple.
