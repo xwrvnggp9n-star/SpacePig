@@ -221,6 +221,8 @@ struct HelperStatusCard: View {
             Menu("Helper") {
                 Button("Check Again") { Task { await model.helper.refresh() } }
                 Button("Reinstall Helper") { Task { await model.helper.reinstall() } }
+                Divider()
+                Button("Uninstall Helper") { Task { await model.helper.uninstall() } }
             }
             .fixedSize()
         case .checking, .wrongLocation:

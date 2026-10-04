@@ -87,6 +87,13 @@ final class HelperClient {
         SMAppService.openSystemSettingsLoginItems()
     }
 
+    /// Removes the helper from launchd and Login Items.
+    func uninstall() async {
+        dropConnection()
+        try? await service.unregister()
+        state = .notInstalled
+    }
+
     /// Full reinstall: unregister, wait, register again.
     func reinstall() async {
         dropConnection()
@@ -299,6 +306,12 @@ final class AdminAuthorization: @unchecked Sendable {
 enum SelfTest {
     @MainActor
     static func runIfRequested(_ helper: HelperClient) async {
+        // `--uninstall-helper` removes the helper and quits (used before deleting the app).
+        if CommandLine.arguments.contains("--uninstall-helper") {
+            await helper.uninstall()
+            NSApplication.shared.terminate(nil)
+            return
+        }
         guard CommandLine.arguments.contains("--selftest-auth") else { return }
         var lines: [String] = ["SystemDataLens self-test \(Date())", "helper state: \(helper.state)"]
         if helper.isReady {
