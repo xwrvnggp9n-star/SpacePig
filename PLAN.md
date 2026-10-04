@@ -1,4 +1,4 @@
-# SystemDataLens plan
+# SpacePig plan
 
 A free, open-source (MIT), native macOS app that shows what is actually inside the
 "macOS" and "System Data" bars in System Settings > General > Storage, down to real
@@ -10,20 +10,20 @@ paths on disk, and can clean up known-safe targets the user selects.
 - Built with xcodegen (`project.yml`), bundle prefix `app.sklar`, team 5Y3S9Y6Z27,
   Developer ID signing, hardened runtime. Not sandboxed (a sandboxed app cannot reach
   the paths that matter and complicates the daemon).
-- MIT license, public GitHub repo `xwrvnggp9n-star/SystemDataLens`. DMG release,
+- MIT license, public GitHub repo `xwrvnggp9n-star/SpacePig`. DMG release,
   notarized when the Apple agreement is renewed.
 
 ## Architecture
 
 Two executables in one bundle.
 
-1. `SystemDataLens.app` (runs as the user). UI, category engine, rules file,
+1. `SpacePig.app` (runs as the user). UI, category engine, rules file,
    user-owned cleanup (Move to Trash, `xcrun simctl`), raw-disk browsing.
-2. `SystemDataLensHelper` (runs as root via launchd). Registered with
-   `SMAppService.daemon(plistName: "app.sklar.SystemDataLens.helper.plist")`.
+2. `SpacePigHelper` (runs as root via launchd). Registered with
+   `SMAppService.daemon(plistName: "app.sklar.SpacePig.helper.plist")`.
    - Plist at `Contents/Library/LaunchDaemons/`, `BundleProgram =
-     Contents/MacOS/SystemDataLensHelper`, `MachServices` =
-     `app.sklar.SystemDataLens.helper`, `AssociatedBundleIdentifiers` = app ID.
+     Contents/MacOS/SpacePigHelper`, `MachServices` =
+     `app.sklar.SpacePig.helper`, `AssociatedBundleIdentifiers` = app ID.
    - User approves once in System Settings > Login Items; app calls
      `SMAppService.openSystemSettingsLoginItems()` when status is `.requiresApproval`.
    - Launched on demand; exits after 120 s idle with no connections.
@@ -34,7 +34,7 @@ Two executables in one bundle.
 
 - `NSXPCListener(machServiceName:)` in the helper. In `shouldAcceptNewConnection`
   call `connection.setCodeSigningRequirement(...)` (macOS 13+) with
-  `anchor apple generic and identifier "app.sklar.SystemDataLens" and
+  `anchor apple generic and identifier "app.sklar.SpacePig" and
   certificate leaf[subject.OU] = "5Y3S9Y6Z27"`. The app sets the mirror requirement
   on its side for the helper identifier.
 - The helper derives the calling user from `connection.effectiveUserIdentifier`
@@ -125,7 +125,7 @@ Both reviews are saved in `docs/reviews/`. Changes adopted:
    external form for `system.privilege.admin`, verified in the helper without UI.
 2. **Stricter code requirement.** Helper accepts only Developer ID leaf
    (`field.1.2.840.113635.100.6.1.13`), team 5Y3S9Y6Z27, identifier
-   `app.sklar.SystemDataLens`, and no `get-task-allow` entitlement.
+   `app.sklar.SpacePig`, and no `get-task-allow` entitlement.
    App connects with `.privileged` and checks the helper's requirement.
 3. **Race-free deletion.** No path-based deletes anywhere. `SafeDeleter` opens the
    allowlisted root with `O_NOFOLLOW_ANY`, walks with `openat(O_NOFOLLOW)`, checks

@@ -1,4 +1,6 @@
-# SystemDataLens
+<img src="docs/icon.png" width="128" alt="">
+
+# SpacePig
 
 A free, open-source macOS app that shows what is inside the "macOS" and "System Data" bars in System Settings > General > Storage, down to the folders and files on disk. It can also clear caches, logs and other leftovers you pick from a list.
 
@@ -12,7 +14,7 @@ MIT license. Native SwiftUI. macOS 14 or later.
 - **Raw volumes.** Browse the Data volume, the system volume and Preboot as plain trees.
 - A list with size bars or a treemap for every view, and an inspector that says what a folder is and whether it is safe to remove.
 
-Apple does not publish how System Settings assigns files to categories. SystemDataLens reconstructs it from the rules in `App/Resources/rules.json`. On the Mac it was calibrated against, Messages, Photos, Mail and Other Users came within about 1 GB of System Settings. Expect differences of a few GB elsewhere.
+Apple does not publish how System Settings assigns files to categories. SpacePig reconstructs it from the rules in `App/Resources/rules.json`. On the Mac it was calibrated against, Messages, Photos, Mail and Other Users came within about 1 GB of System Settings. Expect differences of a few GB elsewhere.
 
 ## The helper
 
@@ -25,7 +27,7 @@ Most of the disk is readable by your account, but not all of it. The app install
 - Deletion never follows symlinks and never crosses into another volume.
 - The helper quits after two minutes of inactivity, and on its own when the app is updated.
 
-macOS hides Mail, Messages, Safari and other app data from every app without Full Disk Access, even one running as root. Turn on Full Disk Access for SystemDataLens in System Settings > Privacy & Security. The helper inherits it.
+macOS hides Mail, Messages, Safari and other app data from every app without Full Disk Access, even one running as root. Turn on Full Disk Access for SpacePig in System Settings > Privacy & Security. The helper inherits it.
 
 ## Cleanup
 
@@ -46,9 +48,9 @@ scripts/build.sh --install  # also copies the app to /Applications
 
 The project signs with a Developer ID certificate. The helper refuses any client that is not Developer ID signed by the same team, so to build your own copy, change `DEVELOPMENT_TEAM` in `project.yml` and `teamID` in `Shared/HelperProtocol.swift` to your team.
 
-Tests: `xcodebuild test -scheme SystemDataLens`.
+Tests: `xcodebuild test -scheme SpacePig`.
 
-Self-test of the helper's password check: `open -a SystemDataLens --args --selftest-auth`, then read `~/Library/Logs/SystemDataLens-selftest.log`.
+Self-test of the helper's password check: `open -a SpacePig --args --selftest-auth`, then read `~/Library/Logs/SpacePig-selftest.log`.
 
 ## Status
 

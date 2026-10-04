@@ -10,7 +10,7 @@ enum HelperInfo {
     }
 }
 
-/// Accepts a connection only from the release-signed SystemDataLens app run by an admin.
+/// Accepts a connection only from the release-signed SpacePig app run by an admin.
 final class ListenerDelegate: NSObject, NSXPCListenerDelegate {
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
         let pid = connection.processIdentifier

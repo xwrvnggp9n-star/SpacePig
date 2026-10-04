@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds a Release, Developer ID signed SystemDataLens.app, verifies signatures,
+# Builds a Release, Developer ID signed SpacePig.app, verifies signatures,
 # packages a DMG and notarizes it when the notarytool profile exists.
 #   scripts/build.sh            build + DMG
 #   scripts/build.sh --install  also copy to /Applications
@@ -11,25 +11,25 @@ xcodegen generate --quiet
 rm -rf build
 # A unique build number per build lets the app detect a stale helper still running.
 BUILD_NUMBER=${BUILD_NUMBER:-$(date +%Y%m%d%H%M)}
-xcodebuild -project SystemDataLens.xcodeproj -scheme SystemDataLens -configuration Release \
+xcodebuild -project SpacePig.xcodeproj -scheme SpacePig -configuration Release \
   -derivedDataPath build/dd -quiet CURRENT_PROJECT_VERSION="$BUILD_NUMBER" build
-APP=build/dd/Build/Products/Release/SystemDataLens.app
+APP=build/dd/Build/Products/Release/SpacePig.app
 
 echo "==> verifying signatures"
 codesign --verify --deep --strict --verbose=2 "$APP"
-codesign -dvv "$APP/Contents/MacOS/SystemDataLensHelper" 2>&1 | grep -E "Identifier|TeamIdentifier|Authority=Developer ID Application|flags"
+codesign -dvv "$APP/Contents/MacOS/SpacePigHelper" 2>&1 | grep -E "Identifier|TeamIdentifier|Authority=Developer ID Application|flags"
 codesign -d --entitlements - "$APP" 2>/dev/null | grep -q get-task-allow && { echo "get-task-allow present; refusing"; exit 1; }
-test -f "$APP/Contents/Library/LaunchDaemons/app.sklar.SystemDataLens.helper.plist"
-plutil -lint "$APP/Contents/Library/LaunchDaemons/app.sklar.SystemDataLens.helper.plist"
+test -f "$APP/Contents/Library/LaunchDaemons/app.sklar.SpacePig.helper.plist"
+plutil -lint "$APP/Contents/Library/LaunchDaemons/app.sklar.SpacePig.helper.plist"
 
 VERSION=$(defaults read "$PWD/$APP/Contents/Info" CFBundleShortVersionString)
 mkdir -p dist
-DMG=dist/SystemDataLens-$VERSION.dmg
+DMG=dist/SpacePig-$VERSION.dmg
 rm -f "$DMG"
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
-hdiutil create -quiet -volname "SystemDataLens $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+hdiutil create -quiet -volname "SpacePig $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 rm -rf "$STAGE"
 codesign --sign "Developer ID Application" --timestamp "$DMG"
 
@@ -43,7 +43,7 @@ fi
 echo "==> $DMG"
 
 if [[ "${1:-}" == "--install" ]]; then
-  rm -rf /Applications/SystemDataLens.app
+  rm -rf /Applications/SpacePig.app
   cp -R "$APP" /Applications/
-  echo "==> installed /Applications/SystemDataLens.app"
+  echo "==> installed /Applications/SpacePig.app"
 fi

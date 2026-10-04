@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5F154DCFEA3C60D61549A754"
-               BuildableName = "SystemDataLens.app"
-               BlueprintName = "SystemDataLens"
-               ReferencedContainer = "container:SystemDataLens.xcodeproj">
+               BlueprintIdentifier = "26154A626D3283AAB192C584"
+               BuildableName = "SpacePig.app"
+               BlueprintName = "SpacePig"
+               ReferencedContainer = "container:SpacePig.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +32,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5F154DCFEA3C60D61549A754"
-            BuildableName = "SystemDataLens.app"
-            BlueprintName = "SystemDataLens"
-            ReferencedContainer = "container:SystemDataLens.xcodeproj">
+            BlueprintIdentifier = "26154A626D3283AAB192C584"
+            BuildableName = "SpacePig.app"
+            BlueprintName = "SpacePig"
+            ReferencedContainer = "container:SpacePig.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -44,10 +44,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "4B619FEC7F6DC7ED2EE5CED1"
-               BuildableName = "SystemDataLensTests.xctest"
-               BlueprintName = "SystemDataLensTests"
-               ReferencedContainer = "container:SystemDataLens.xcodeproj">
+               BlueprintIdentifier = "BD07502D3F0C74D13AAAAE89"
+               BuildableName = "SpacePigTests.xctest"
+               BlueprintName = "SpacePigTests"
+               ReferencedContainer = "container:SpacePig.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -68,10 +68,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5F154DCFEA3C60D61549A754"
-            BuildableName = "SystemDataLens.app"
-            BlueprintName = "SystemDataLens"
-            ReferencedContainer = "container:SystemDataLens.xcodeproj">
+            BlueprintIdentifier = "26154A626D3283AAB192C584"
+            BuildableName = "SpacePig.app"
+            BlueprintName = "SpacePig"
+            ReferencedContainer = "container:SpacePig.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -85,10 +85,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5F154DCFEA3C60D61549A754"
-            BuildableName = "SystemDataLens.app"
-            BlueprintName = "SystemDataLens"
-            ReferencedContainer = "container:SystemDataLens.xcodeproj">
+            BlueprintIdentifier = "26154A626D3283AAB192C584"
+            BuildableName = "SpacePig.app"
+            BlueprintName = "SpacePig"
+            ReferencedContainer = "container:SpacePig.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -250,10 +250,10 @@ enum AuthorizationRight {
             "authenticate-user": true,
             "session-owner": false,
             "version": 1,
-            "comment": "Used by SystemDataLens before its helper removes system-wide files.",
+            "comment": "Used by SpacePig before its helper removes system-wide files.",
         ]
         let status = AuthorizationRightSet(authRef, name, rule as CFDictionary,
-                                           "SystemDataLens wants to remove system caches or logs." as CFString, nil, nil)
+                                           "SpacePig wants to remove system caches or logs." as CFString, nil, nil)
         if status != errAuthorizationSuccess {
             helperLog.error("could not register authorization right: \(status)")
         }

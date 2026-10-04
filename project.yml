@@ -1,4 +1,4 @@
-name: SystemDataLens
+name: SpacePig
 options:
   bundleIdPrefix: app.sklar
   createIntermediateGroups: true
@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "Developer ID Application"
@@ -19,32 +19,33 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "14.0"
 
 targets:
-  SystemDataLens:
+  SpacePig:
     type: application
     platform: macOS
     sources:
       - path: App
       - path: Shared
-      - path: Helper/app.sklar.SystemDataLens.helper.plist
+      - path: Helper/app.sklar.SpacePig.helper.plist
         buildPhase:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchDaemons
     dependencies:
-      - target: SystemDataLensHelper
+      - target: SpacePigHelper
         embed: true
         codeSign: false
         copy:
           destination: executables
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens
-        PRODUCT_NAME: SystemDataLens
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SpacePig
+        PRODUCT_NAME: SpacePig
         INFOPLIST_FILE: App/Info.plist
-        CODE_SIGN_ENTITLEMENTS: App/SystemDataLens.entitlements
+        CODE_SIGN_ENTITLEMENTS: App/SpacePig.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
 
-  SystemDataLensHelper:
+  SpacePigHelper:
     type: tool
     platform: macOS
     sources:
@@ -54,14 +55,14 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens.helper
-        PRODUCT_NAME: SystemDataLensHelper
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SpacePig.helper
+        PRODUCT_NAME: SpacePigHelper
         SKIP_INSTALL: "YES"
         CREATE_INFOPLIST_SECTION_IN_BINARY: "YES"
         INFOPLIST_FILE: Helper/Info.plist
         CODE_SIGN_ENTITLEMENTS: Helper/Helper.entitlements
 
-  SystemDataLensTests:
+  SpacePigTests:
     type: bundle.unit-test
     platform: macOS
     sources:
@@ -71,7 +72,7 @@ targets:
       - path: App/Model/TreemapLayout.swift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SystemDataLens.tests
+        PRODUCT_BUNDLE_IDENTIFIER: app.sklar.SpacePig.tests
         GENERATE_INFOPLIST_FILE: "YES"
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
@@ -79,10 +80,10 @@ targets:
         ENABLE_HARDENED_RUNTIME: "NO"
 
 schemes:
-  SystemDataLens:
+  SpacePig:
     build:
       targets:
-        SystemDataLens: all
+        SpacePig: all
     test:
       targets:
-        - SystemDataLensTests
+        - SpacePigTests

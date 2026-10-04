@@ -1,0 +1,702 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00A96F9F778F16C56838914B /* CleanupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA86422B7993350977C707D /* CleanupModels.swift */; };
+		0AE64F16ADC4B6B7179DD9CD /* FlatTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C1E8DCC75842DC8223ABD /* FlatTree.swift */; };
+		0B1A82693E42605FF705A393 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE08D8A273533C6C6527328E /* main.swift */; };
+		0FF9BA49102B3D8E56455B7D /* SpacePigHelper in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 9A3BFFB192B92D5E4A7AB56A /* SpacePigHelper */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		182D7BFDAD35C4AC251BC5B4 /* RootTargets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F5E10D05C4615DC5D21C61 /* RootTargets.swift */; };
+		267605B7F4A0A59EF1E67A18 /* FlatTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C1E8DCC75842DC8223ABD /* FlatTree.swift */; };
+		26C5046631B4AF4DC1D8A93F /* BulkScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E5C52E46FC34A1582DE104 /* BulkScanner.swift */; };
+		3E2AF1FB1D344E0758A0AAC8 /* HelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB00DDA8F29D0F8D0A65B09 /* HelperProtocol.swift */; };
+		44452649F2107D4D289FB538 /* FlatTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C1E8DCC75842DC8223ABD /* FlatTree.swift */; };
+		5399395628BE02671B167D42 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60F56F9222007444D07F607 /* BrowserView.swift */; };
+		579A236FEC7D2A96DDE43F45 /* Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885FBD81606434EAAC1E731 /* Categories.swift */; };
+		5BE898332EA97B8F34715B67 /* Volumes.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE85D4E4ED0BDB2F8728CA81 /* Volumes.swift */; };
+		65F7430D261BFAA86914CD9C /* CleanupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA86422B7993350977C707D /* CleanupModels.swift */; };
+		7187644FD5425E3C63FDD11E /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BD4226781B5047E0602448 /* Command.swift */; };
+		74332333300E5572CDA5AA83 /* TreemapLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D7429E0AD56F04B452F9CE /* TreemapLayout.swift */; };
+		783CF763F1B21953A337B8DE /* CleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13544AE3C25A131155CF53F /* CleanupView.swift */; };
+		8515620FAA4E3A34D4BD3CA9 /* BulkScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E5C52E46FC34A1582DE104 /* BulkScanner.swift */; };
+		88DB25109B814BED7ECD1117 /* Categories.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885FBD81606434EAAC1E731 /* Categories.swift */; };
+		89847DD3B243EE319BA8506B /* SafeDeleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF37BA6F2C048834229F5AE4 /* SafeDeleter.swift */; };
+		8BB2239165EC7A5931D1D4BE /* UserCleanup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3609D9906188121B9A7A3A9C /* UserCleanup.swift */; };
+		8E0BBA885C27292E970FC787 /* CleanupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA86422B7993350977C707D /* CleanupModels.swift */; };
+		96D170CD51893E56C4E4756B /* HelperSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D89B7E492AA6F6A165A271 /* HelperSession.swift */; };
+		9F4E3A35B3CF4B78D5B3EDFC /* SafeDeleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF37BA6F2C048834229F5AE4 /* SafeDeleter.swift */; };
+		A60E9A82028923D6DE9418D5 /* OverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA995E66D310DB0E377B4D2 /* OverviewView.swift */; };
+		AC9CA7F7634ECB9373BCD2A2 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BD4226781B5047E0602448 /* Command.swift */; };
+		B0C9B9B3554132EFA300986C /* SafeDeleter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF37BA6F2C048834229F5AE4 /* SafeDeleter.swift */; };
+		B101BAC17161A8179CDCB696 /* TreemapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB58DAF0E508CA43BFAB771 /* TreemapView.swift */; };
+		BAB6BB49B0AEFD9744E24FE2 /* HelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB00DDA8F29D0F8D0A65B09 /* HelperProtocol.swift */; };
+		BD36E339D590C678A7189499 /* Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E646F4AD9684C2893E094C9F /* Browser.swift */; };
+		C023012265E77027B3DE2F6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 254270A86D3754FBAEC657E8 /* Assets.xcassets */; };
+		C80B51C90D56A344B5522238 /* rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B2B03EA76C1CF69F502FBC40 /* rules.json */; };
+		C93270E7F0ED9E0CEEA0E17B /* SpacePigApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF0C60EE989661A6818694B /* SpacePigApp.swift */; };
+		CB279F721A5087B7C7207F65 /* TreemapLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D7429E0AD56F04B452F9CE /* TreemapLayout.swift */; };
+		CB467CC7E4D619BFFBE87282 /* BulkScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71E5C52E46FC34A1582DE104 /* BulkScanner.swift */; };
+		CE46A5DD826819DCDE60D938 /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBA287F5E34F1F7DFEAA508 /* CoreTests.swift */; };
+		D026DEFDBA1C45953C81AC8C /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BD4226781B5047E0602448 /* Command.swift */; };
+		D0517BEFA36EEBA3B38B8505 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98AAA501DCF8CA422897992 /* AppModel.swift */; };
+		D8C91EC610EB5EF5BF926CC5 /* HelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB00DDA8F29D0F8D0A65B09 /* HelperProtocol.swift */; };
+		E207305331292DA7B89E2292 /* ListenerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 863FC910CE0173FB00934A14 /* ListenerDelegate.swift */; };
+		E7AD323CAD30CD7521ED26D3 /* HelperClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE8A002ACD465E7A9F57ABD /* HelperClient.swift */; };
+		EC7AA87B288A0304D222E9CA /* app.sklar.SpacePig.helper.plist in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4E97A1DC185311F898C47C24 /* app.sklar.SpacePig.helper.plist */; };
+		FABE7FBDB28B362D990A94D8 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618036C34939A4C2B65EA944 /* InspectorView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0D4EECA3127E9DA25CA20C75 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E8231452D03BC50981B4BEAE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2AA5CC3BB7338A55AEF1DF80;
+			remoteInfo = SpacePigHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		477A3F353DA2705B842B6E16 /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				0FF9BA49102B3D8E56455B7D /* SpacePigHelper in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5CAAEB96E6E0BF4009330602 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				EC7AA87B288A0304D222E9CA /* app.sklar.SpacePig.helper.plist in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		02D7429E0AD56F04B452F9CE /* TreemapLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreemapLayout.swift; sourceTree = "<group>"; };
+		0885FBD81606434EAAC1E731 /* Categories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Categories.swift; sourceTree = "<group>"; };
+		153EC9E41B9EC8EF657C2BAB /* SpacePig.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpacePig.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CF0C60EE989661A6818694B /* SpacePigApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacePigApp.swift; sourceTree = "<group>"; };
+		254270A86D3754FBAEC657E8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2B1BA6A8FFDC865D4AC34476 /* SpacePigTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpacePigTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3609D9906188121B9A7A3A9C /* UserCleanup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCleanup.swift; sourceTree = "<group>"; };
+		3CA995E66D310DB0E377B4D2 /* OverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewView.swift; sourceTree = "<group>"; };
+		4E97A1DC185311F898C47C24 /* app.sklar.SpacePig.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = app.sklar.SpacePig.helper.plist; sourceTree = "<group>"; };
+		4F5C1E8DCC75842DC8223ABD /* FlatTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlatTree.swift; sourceTree = "<group>"; };
+		5C251BFE578844C46F4E2546 /* Helper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Helper.entitlements; sourceTree = "<group>"; };
+		618036C34939A4C2B65EA944 /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		6EB58DAF0E508CA43BFAB771 /* TreemapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreemapView.swift; sourceTree = "<group>"; };
+		71E5C52E46FC34A1582DE104 /* BulkScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkScanner.swift; sourceTree = "<group>"; };
+		863FC910CE0173FB00934A14 /* ListenerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenerDelegate.swift; sourceTree = "<group>"; };
+		9A3BFFB192B92D5E4A7AB56A /* SpacePigHelper */ = {isa = PBXFileReference; includeInIndex = 0; path = SpacePigHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		9DBA287F5E34F1F7DFEAA508 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
+		A0B6B9C4D672B31FA0E5DB62 /* SpacePig.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SpacePig.entitlements; sourceTree = "<group>"; };
+		A3BD4226781B5047E0602448 /* Command.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
+		AAB00DDA8F29D0F8D0A65B09 /* HelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperProtocol.swift; sourceTree = "<group>"; };
+		ACA86422B7993350977C707D /* CleanupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupModels.swift; sourceTree = "<group>"; };
+		AF37BA6F2C048834229F5AE4 /* SafeDeleter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeleter.swift; sourceTree = "<group>"; };
+		AFE8A002ACD465E7A9F57ABD /* HelperClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperClient.swift; sourceTree = "<group>"; };
+		B13544AE3C25A131155CF53F /* CleanupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanupView.swift; sourceTree = "<group>"; };
+		B2B03EA76C1CF69F502FBC40 /* rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = rules.json; sourceTree = "<group>"; };
+		D5F5E10D05C4615DC5D21C61 /* RootTargets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTargets.swift; sourceTree = "<group>"; };
+		D98AAA501DCF8CA422897992 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		DE08D8A273533C6C6527328E /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		E646F4AD9684C2893E094C9F /* Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Browser.swift; sourceTree = "<group>"; };
+		E8D89B7E492AA6F6A165A271 /* HelperSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperSession.swift; sourceTree = "<group>"; };
+		F016B02D0CADFA5B48C58F93 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F60F56F9222007444D07F607 /* BrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
+		FE85D4E4ED0BDB2F8728CA81 /* Volumes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Volumes.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0E71E377C5910E50E2D62AB3 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AFE8A002ACD465E7A9F57ABD /* HelperClient.swift */,
+				3609D9906188121B9A7A3A9C /* UserCleanup.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3FE3087ADD3E8A37EC1C3B69 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B2B03EA76C1CF69F502FBC40 /* rules.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		431D9BD957D56EA1DE9762BC /* App */ = {
+			isa = PBXGroup;
+			children = (
+				254270A86D3754FBAEC657E8 /* Assets.xcassets */,
+				F016B02D0CADFA5B48C58F93 /* Info.plist */,
+				A0B6B9C4D672B31FA0E5DB62 /* SpacePig.entitlements */,
+				1CF0C60EE989661A6818694B /* SpacePigApp.swift */,
+				E5C87DB794FC97C129D210E3 /* Model */,
+				3FE3087ADD3E8A37EC1C3B69 /* Resources */,
+				0E71E377C5910E50E2D62AB3 /* Services */,
+				C7291B0EDE4EAAD8381C2FC9 /* Views */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		8BB541E364BFB97625604260 /* Helper */ = {
+			isa = PBXGroup;
+			children = (
+				4E97A1DC185311F898C47C24 /* app.sklar.SpacePig.helper.plist */,
+				5C251BFE578844C46F4E2546 /* Helper.entitlements */,
+				E8D89B7E492AA6F6A165A271 /* HelperSession.swift */,
+				863FC910CE0173FB00934A14 /* ListenerDelegate.swift */,
+				DE08D8A273533C6C6527328E /* main.swift */,
+				D5F5E10D05C4615DC5D21C61 /* RootTargets.swift */,
+			);
+			path = Helper;
+			sourceTree = "<group>";
+		};
+		8F01E25E98E9D3A98ACBF89A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				153EC9E41B9EC8EF657C2BAB /* SpacePig.app */,
+				9A3BFFB192B92D5E4A7AB56A /* SpacePigHelper */,
+				2B1BA6A8FFDC865D4AC34476 /* SpacePigTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		941BCF030885F0EFE228579A = {
+			isa = PBXGroup;
+			children = (
+				431D9BD957D56EA1DE9762BC /* App */,
+				8BB541E364BFB97625604260 /* Helper */,
+				B3BA01D0FE8CC59863CD2852 /* Shared */,
+				9E2085DCD3593D2170F2D2A6 /* Tests */,
+				8F01E25E98E9D3A98ACBF89A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9E2085DCD3593D2170F2D2A6 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				9DBA287F5E34F1F7DFEAA508 /* CoreTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		B3BA01D0FE8CC59863CD2852 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				71E5C52E46FC34A1582DE104 /* BulkScanner.swift */,
+				ACA86422B7993350977C707D /* CleanupModels.swift */,
+				A3BD4226781B5047E0602448 /* Command.swift */,
+				4F5C1E8DCC75842DC8223ABD /* FlatTree.swift */,
+				AAB00DDA8F29D0F8D0A65B09 /* HelperProtocol.swift */,
+				AF37BA6F2C048834229F5AE4 /* SafeDeleter.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		C7291B0EDE4EAAD8381C2FC9 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F60F56F9222007444D07F607 /* BrowserView.swift */,
+				B13544AE3C25A131155CF53F /* CleanupView.swift */,
+				618036C34939A4C2B65EA944 /* InspectorView.swift */,
+				3CA995E66D310DB0E377B4D2 /* OverviewView.swift */,
+				6EB58DAF0E508CA43BFAB771 /* TreemapView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E5C87DB794FC97C129D210E3 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				D98AAA501DCF8CA422897992 /* AppModel.swift */,
+				E646F4AD9684C2893E094C9F /* Browser.swift */,
+				0885FBD81606434EAAC1E731 /* Categories.swift */,
+				02D7429E0AD56F04B452F9CE /* TreemapLayout.swift */,
+				FE85D4E4ED0BDB2F8728CA81 /* Volumes.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		26154A626D3283AAB192C584 /* SpacePig */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B9D83ED001323C881D6D4FF7 /* Build configuration list for PBXNativeTarget "SpacePig" */;
+			buildPhases = (
+				DA30F17E9DB837251553F1D6 /* Sources */,
+				2E50DED34C9F98E2BD6AE811 /* Resources */,
+				5CAAEB96E6E0BF4009330602 /* CopyFiles */,
+				477A3F353DA2705B842B6E16 /* Embed Dependencies */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CD484BDEC6809F695D88E18B /* PBXTargetDependency */,
+			);
+			name = SpacePig;
+			packageProductDependencies = (
+			);
+			productName = SpacePig;
+			productReference = 153EC9E41B9EC8EF657C2BAB /* SpacePig.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2AA5CC3BB7338A55AEF1DF80 /* SpacePigHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 667DE501088388CB14798B30 /* Build configuration list for PBXNativeTarget "SpacePigHelper" */;
+			buildPhases = (
+				42E31DD6DDB4AD47E301D69E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpacePigHelper;
+			packageProductDependencies = (
+			);
+			productName = SpacePigHelper;
+			productReference = 9A3BFFB192B92D5E4A7AB56A /* SpacePigHelper */;
+			productType = "com.apple.product-type.tool";
+		};
+		BD07502D3F0C74D13AAAAE89 /* SpacePigTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4DE5B19865FE1AEED9C76F85 /* Build configuration list for PBXNativeTarget "SpacePigTests" */;
+			buildPhases = (
+				2F896D7AE444FB726FA28238 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SpacePigTests;
+			packageProductDependencies = (
+			);
+			productName = SpacePigTests;
+			productReference = 2B1BA6A8FFDC865D4AC34476 /* SpacePigTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E8231452D03BC50981B4BEAE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					26154A626D3283AAB192C584 = {
+						DevelopmentTeam = 5Y3S9Y6Z27;
+						ProvisioningStyle = Manual;
+					};
+					2AA5CC3BB7338A55AEF1DF80 = {
+						DevelopmentTeam = 5Y3S9Y6Z27;
+						ProvisioningStyle = Manual;
+					};
+					BD07502D3F0C74D13AAAAE89 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 7A91163784A6153F948DF51C /* Build configuration list for PBXProject "SpacePig" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 941BCF030885F0EFE228579A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8F01E25E98E9D3A98ACBF89A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				26154A626D3283AAB192C584 /* SpacePig */,
+				2AA5CC3BB7338A55AEF1DF80 /* SpacePigHelper */,
+				BD07502D3F0C74D13AAAAE89 /* SpacePigTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2E50DED34C9F98E2BD6AE811 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C023012265E77027B3DE2F6B /* Assets.xcassets in Resources */,
+				C80B51C90D56A344B5522238 /* rules.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2F896D7AE444FB726FA28238 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CB467CC7E4D619BFFBE87282 /* BulkScanner.swift in Sources */,
+				88DB25109B814BED7ECD1117 /* Categories.swift in Sources */,
+				8E0BBA885C27292E970FC787 /* CleanupModels.swift in Sources */,
+				D026DEFDBA1C45953C81AC8C /* Command.swift in Sources */,
+				CE46A5DD826819DCDE60D938 /* CoreTests.swift in Sources */,
+				0AE64F16ADC4B6B7179DD9CD /* FlatTree.swift in Sources */,
+				BAB6BB49B0AEFD9744E24FE2 /* HelperProtocol.swift in Sources */,
+				B0C9B9B3554132EFA300986C /* SafeDeleter.swift in Sources */,
+				74332333300E5572CDA5AA83 /* TreemapLayout.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		42E31DD6DDB4AD47E301D69E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26C5046631B4AF4DC1D8A93F /* BulkScanner.swift in Sources */,
+				00A96F9F778F16C56838914B /* CleanupModels.swift in Sources */,
+				7187644FD5425E3C63FDD11E /* Command.swift in Sources */,
+				44452649F2107D4D289FB538 /* FlatTree.swift in Sources */,
+				3E2AF1FB1D344E0758A0AAC8 /* HelperProtocol.swift in Sources */,
+				96D170CD51893E56C4E4756B /* HelperSession.swift in Sources */,
+				E207305331292DA7B89E2292 /* ListenerDelegate.swift in Sources */,
+				182D7BFDAD35C4AC251BC5B4 /* RootTargets.swift in Sources */,
+				9F4E3A35B3CF4B78D5B3EDFC /* SafeDeleter.swift in Sources */,
+				0B1A82693E42605FF705A393 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DA30F17E9DB837251553F1D6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D0517BEFA36EEBA3B38B8505 /* AppModel.swift in Sources */,
+				BD36E339D590C678A7189499 /* Browser.swift in Sources */,
+				5399395628BE02671B167D42 /* BrowserView.swift in Sources */,
+				8515620FAA4E3A34D4BD3CA9 /* BulkScanner.swift in Sources */,
+				579A236FEC7D2A96DDE43F45 /* Categories.swift in Sources */,
+				65F7430D261BFAA86914CD9C /* CleanupModels.swift in Sources */,
+				783CF763F1B21953A337B8DE /* CleanupView.swift in Sources */,
+				AC9CA7F7634ECB9373BCD2A2 /* Command.swift in Sources */,
+				267605B7F4A0A59EF1E67A18 /* FlatTree.swift in Sources */,
+				E7AD323CAD30CD7521ED26D3 /* HelperClient.swift in Sources */,
+				D8C91EC610EB5EF5BF926CC5 /* HelperProtocol.swift in Sources */,
+				FABE7FBDB28B362D990A94D8 /* InspectorView.swift in Sources */,
+				A60E9A82028923D6DE9418D5 /* OverviewView.swift in Sources */,
+				89847DD3B243EE319BA8506B /* SafeDeleter.swift in Sources */,
+				C93270E7F0ED9E0CEEA0E17B /* SpacePigApp.swift in Sources */,
+				CB279F721A5087B7C7207F65 /* TreemapLayout.swift in Sources */,
+				B101BAC17161A8179CDCB696 /* TreemapView.swift in Sources */,
+				8BB2239165EC7A5931D1D4BE /* UserCleanup.swift in Sources */,
+				5BE898332EA97B8F34715B67 /* Volumes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CD484BDEC6809F695D88E18B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2AA5CC3BB7338A55AEF1DF80 /* SpacePigHelper */;
+			targetProxy = 0D4EECA3127E9DA25CA20C75 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0D3DFA67EEBA94000B2E0D5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig.tests;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		585866E931487B0A83C59593 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig.tests;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		76BF9E1D7F3444D46779F99E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Helper/Helper.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				INFOPLIST_FILE = Helper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig.helper;
+				PRODUCT_NAME = SpacePigHelper;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		789539ED09F4F6758E24142B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/SpacePig.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig;
+				PRODUCT_NAME = SpacePig;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A72AEA1C9D2F22505F51EDE7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5Y3S9Y6Z27;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.2.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		A746F9F2EA9B47B5607C99E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Helper/Helper.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				INFOPLIST_FILE = Helper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig.helper;
+				PRODUCT_NAME = SpacePigHelper;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		E039E1F08A1FA10E2ECA06D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5Y3S9Y6Z27;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.2.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CODE_SIGN_FLAGS = "--timestamp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		E3BC5B52B185C8D92B267420 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/SpacePig.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = app.sklar.SpacePig;
+				PRODUCT_NAME = SpacePig;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4DE5B19865FE1AEED9C76F85 /* Build configuration list for PBXNativeTarget "SpacePigTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D3DFA67EEBA94000B2E0D5A /* Debug */,
+				585866E931487B0A83C59593 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		667DE501088388CB14798B30 /* Build configuration list for PBXNativeTarget "SpacePigHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76BF9E1D7F3444D46779F99E /* Debug */,
+				A746F9F2EA9B47B5607C99E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7A91163784A6153F948DF51C /* Build configuration list for PBXProject "SpacePig" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E039E1F08A1FA10E2ECA06D3 /* Debug */,
+				A72AEA1C9D2F22505F51EDE7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B9D83ED001323C881D6D4FF7 /* Build configuration list for PBXNativeTarget "SpacePig" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				789539ED09F4F6758E24142B /* Debug */,
+				E3BC5B52B185C8D92B267420 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E8231452D03BC50981B4BEAE /* Project object */;
+}

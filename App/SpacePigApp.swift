@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SystemDataLensApp: App {
+struct SpacePigApp: App {
     @State private var model = AppModel()
 
     var body: some Scene {

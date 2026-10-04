@@ -249,7 +249,7 @@ struct HelperStatusCard: View {
     private var title: String {
         switch model.helper.state {
         case .checking: return "Checking the helper…"
-        case .wrongLocation: return "Move SystemDataLens to Applications"
+        case .wrongLocation: return "Move SpacePig to Applications"
         case .notInstalled: return "Limited mode"
         case .needsApproval: return "Approve the helper"
         case .ready(let v): return "Helper running (\(v))"
@@ -265,7 +265,7 @@ struct HelperStatusCard: View {
         case .notInstalled:
             return "Without the helper the app sees only what your account can read, so other users' folders and parts of /private and /Library show up as unreadable. The helper is a small background tool that scans as root. Only administrators can use it."
         case .needsApproval:
-            return "Turn on SystemDataLens under \"Allow in the Background\" in System Settings > General > Login Items & Extensions, then click Check Again."
+            return "Turn on SpacePig under \"Allow in the Background\" in System Settings > General > Login Items & Extensions, then click Check Again."
         case .ready:
             return "Scans run as root. Cleanups that touch system folders ask for an administrator password each time."
         case .failed(let s):
@@ -281,7 +281,7 @@ struct FullDiskAccessCard: View {
                 Image(systemName: "hand.raised.fill").font(.title2).foregroundStyle(.orange)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Full Disk Access is off").font(.headline)
-                    Text("macOS hides Mail, Messages, Safari and other app data from every app without Full Disk Access, even when it runs as root. Turn it on for SystemDataLens (and for SystemDataLensHelper if it appears), then quit and reopen the app.")
+                    Text("macOS hides Mail, Messages, Safari and other app data from every app without Full Disk Access, even when it runs as root. Turn it on for SpacePig (and for SpacePigHelper if it appears), then quit and reopen the app.")
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()

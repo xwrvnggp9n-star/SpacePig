@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>app.sklar.SystemDataLens.helper</string>
+	<string>app.sklar.SpacePig.helper</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/SystemDataLensHelper</string>
+	<string>Contents/MacOS/SpacePigHelper</string>
 	<key>MachServices</key>
 	<dict>
-		<key>app.sklar.SystemDataLens.helper</key>
+		<key>app.sklar.SpacePig.helper</key>
 		<true/>
 	</dict>
 	<key>AssociatedBundleIdentifiers</key>
 	<array>
-		<string>app.sklar.SystemDataLens</string>
+		<string>app.sklar.SpacePig</string>
 	</array>
 	<key>ProcessType</key>
 	<string>Interactive</string>

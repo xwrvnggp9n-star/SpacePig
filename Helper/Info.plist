@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>app.sklar.SystemDataLens.helper</string>
+	<string>app.sklar.SpacePig.helper</string>
 	<key>CFBundleName</key>
-	<string>SystemDataLensHelper</string>
+	<string>SpacePigHelper</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>

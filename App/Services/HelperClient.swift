@@ -299,9 +299,9 @@ final class AdminAuthorization: @unchecked Sendable {
     }
 }
 
-/// `open -a SystemDataLens --args --selftest-auth` checks that the helper refuses a
+/// `open -a SpacePig --args --selftest-auth` checks that the helper refuses a
 /// cleanup request carrying an authorization with no rights, writes the result to
-/// ~/Library/Logs/SystemDataLens-selftest.log, and quits. The request names a snapshot
+/// ~/Library/Logs/SpacePig-selftest.log, and quits. The request names a snapshot
 /// date that cannot exist, so nothing is deleted even if the check were to fail.
 enum SelfTest {
     @MainActor
@@ -313,7 +313,7 @@ enum SelfTest {
             return
         }
         guard CommandLine.arguments.contains("--selftest-auth") else { return }
-        var lines: [String] = ["SystemDataLens self-test \(Date())", "helper state: \(helper.state)"]
+        var lines: [String] = ["SpacePig self-test \(Date())", "helper state: \(helper.state)"]
         if helper.isReady {
             do {
                 let empty = try AdminAuthorization(withoutRights: true)
@@ -326,7 +326,7 @@ enum SelfTest {
         } else {
             lines.append("SKIP: helper not ready")
         }
-        let url = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/SystemDataLens-selftest.log")
+        let url = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Logs/SpacePig-selftest.log")
         try? (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
         NSApplication.shared.terminate(nil)
     }

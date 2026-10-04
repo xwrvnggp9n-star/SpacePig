@@ -2,10 +2,10 @@ import Foundation
 
 /// Identifiers and code-signing requirements shared by the app and the root helper.
 enum HelperConstants {
-    static let machServiceName = "app.sklar.SystemDataLens.helper"
-    static let launchdPlistName = "app.sklar.SystemDataLens.helper.plist"
-    static let appIdentifier = "app.sklar.SystemDataLens"
-    static let helperIdentifier = "app.sklar.SystemDataLens.helper"
+    static let machServiceName = "app.sklar.SpacePig.helper"
+    static let launchdPlistName = "app.sklar.SpacePig.helper.plist"
+    static let appIdentifier = "app.sklar.SpacePig"
+    static let helperIdentifier = "app.sklar.SpacePig.helper"
     static let teamID = "5Y3S9Y6Z27"
 
     /// Developer ID Application leaf marker OID. Excludes Apple Development certificates.
@@ -24,7 +24,7 @@ enum HelperConstants {
 
     /// Authorization right the app must obtain (admin password or Touch ID) before root
     /// cleanup. The helper registers it with `allow-root` off and no credential sharing.
-    static let cleanupRight = "app.sklar.SystemDataLens.cleanup"
+    static let cleanupRight = "app.sklar.SpacePig.cleanup"
 
     /// The only directories the helper will scan.
     static let allowedScanRoots = ["/System/Volumes/Data", "/System/Volumes/Preboot"]
