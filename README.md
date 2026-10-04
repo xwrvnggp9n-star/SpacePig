@@ -31,7 +31,7 @@ macOS hides Mail, Messages, Safari and other app data from every app without Ful
 
 ## Cleanup
 
-The Clean Up panel lists every target with its current size and a checkbox. Safe targets start checked; anything that could lose data starts unchecked. Each target shows the exact folders or the command it runs. Nothing is deleted until you confirm, and cancelling the administrator prompt cancels the whole cleanup.
+The Clean Up panel lists every target with its current size and a checkbox. Safe targets start checked; anything that could lose data starts unchecked. Details lists every folder and file a target will remove, with sizes and dates. Caches, logs, Xcode DerivedData and device support files can be limited to files not modified in 30, 60 or 90 days. Nothing is deleted until you confirm, and cancelling the administrator prompt cancels the whole cleanup.
 
 Targets run as you: app caches, Apple app caches, command-line caches, app logs, Xcode DerivedData, device support files, archives, simulator caches, unavailable simulators, simulator runtimes, npm, pnpm and Homebrew caches, Google Drive cancelled uploads, old Claude agent sessions, iPhone backups, and the Trash.
 
